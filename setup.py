@@ -7,7 +7,9 @@ from setuptools import setup, find_packages
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
-requirements = []
+requirements = [
+            'pynacl',
+        ]
 
 setup_requirements = ['pytest-runner', ]
 

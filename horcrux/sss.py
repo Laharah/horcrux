@@ -1,5 +1,5 @@
 """
-Custom Shamir Secret Sharing Module using ideas from the SLIP-0039 standard
+Custom Shamir Secret Sharing Module incorporating ideas from the SLIP-0039 standard
 
 https://github.com/satoshilabs/slips/blob/master/slip-0039.md
 
@@ -109,10 +109,15 @@ def _split_secret(threshold: int, shares: int, secret: bytes, salt: bytes) -> Li
 
     rand_points = [Point(i, rand_int_32() % PRIME) for i in range(threshold - 2)]
     base_points = rand_points + [Point(DIGEST_INDEX, digest), Point(SECRET_INDEX, secret)]
-    return [Point(i, _larange_interpolate(i, base_points)) for i in range(shares)]
+    return [
+        Point(i,
+              _larange_interpolate(i, base_points).to_bytes(32, 'big'))
+        for i in range(shares)
+    ]
 
 
 def _recover_secret(shares: Sequence[Point], salt: bytes) -> bytes:
+    shares = [Point(p.X, int.from_bytes(p.Y, 'big')) for p in shares]
     secret = _larange_interpolate(SECRET_INDEX, shares).to_bytes(32, 'big')
     # Check digest point to ensure secret has been correctly recovered
     digest = _larange_interpolate(DIGEST_INDEX, shares).to_bytes(32, 'big')

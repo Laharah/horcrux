@@ -9,6 +9,7 @@ with open('README.md') as readme_file:
 
 requirements = [
             'pynacl',
+            'protobuf>=3.0.0',
         ]
 
 setup_requirements = ['pytest-runner', ]

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+message ShareHeader {
+	message Point {
+		int32 X = 1;
+		bytes Y = 2;
+	}
+	bytes id = 1;
+	int32 threshold = 2;
+	Point point = 3;
+}
+
+message StreamHeader {
+	bytes header = 1;
+	int32 max_block_size = 2;
+	bytes encrypted_filename = 3;
+}
+
+message StreamBlock {
+	int32 id = 1;
+	bytes data = 2;
+}

@@ -1,4 +1,5 @@
 import pytest
+import nacl.exceptions
 from collections import namedtuple
 
 from horcrux import crypto
@@ -31,32 +32,62 @@ def test_init_stream():
     stream = crypto.Stream()
 
 
-def test_init_write(key):
+def test_init_encrypt(key):
     stream = crypto.Stream()
-    header = stream.init_write(key)
+    header = stream.init_encrypt(key)
     assert isinstance(header, bytes)
     assert len(header) == crypto.lib.crypto_secretstream_xchacha20poly1305_HEADERBYTES
 
 
-def test_write_chunk(key):
+def test_encrypt_chunk(key):
     message = b'this is a message'
     stream = crypto.Stream()
-    header = stream.init_write(key)
-    m = stream.write(message)
+    header = stream.init_encrypt(key)
+    m = stream.encrypt(message)
     assert len(
         m) == len(message) + crypto.lib.crypto_secretstream_xchacha20poly1305_ABYTES
     assert message not in m
 
 
-def test_init_read(key):
+def test_init_decrypt(key):
     stream = crypto.Stream()
-    header = stream.init_write(key)
-    stream.init_read(header, key)
+    header = stream.init_encrypt(key)
+    stream.init_decrypt(header, key)
 
 
-def test_read_chunk(message):
+def test_decrypt_chunk(message):
     stream = crypto.Stream()
-    stream.init_read(message.header, message.key)
-    m = stream.read(message.ciphertext)
+    stream.init_decrypt(message.header, message.key)
+    m = stream.decrypt(message.ciphertext)
     assert m == message.plaintext
+    assert stream.last_tag == 'MESSAGE'
     print(stream.TAGS)
+
+
+def test_default_tag(key):
+    stream = crypto.Stream()
+    header = stream.init_encrypt(key, default_tag='REKEY')
+    m1 = b'rekey after message'
+    m2 = b'this message has been rekeyed'
+    c1 = stream.encrypt(m1)
+    c2 = stream.encrypt(m2, tag='MESSAGE')
+    stream.init_decrypt(header, key)
+    assert stream.decrypt(c1) == m1
+    assert stream.last_tag == 'REKEY'
+    assert stream.decrypt(c2) == m2
+    assert stream.last_tag == 'MESSAGE'
+
+
+def test_decrypt_after_encrypt(message):
+    stream = crypto.Stream()
+    stream.init_encrypt(message.key)
+    stream.encrypt(b'test')
+    with pytest.raises(ValueError):
+        stream.decrypt(message.ciphertext)
+
+
+def test_empty_encrypt(message):
+    stream = crypto.Stream()
+    header = stream.init_encrypt(message.key)
+    with pytest.raises(ValueError):
+        c1 = stream.encrypt(b'')

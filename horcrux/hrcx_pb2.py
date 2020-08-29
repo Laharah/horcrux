@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\nhrcx.proto\"n\n\x0bShareHeader\x12\n\n\x02id\x18\x01 \x01(\x0c\x12\x11\n\tthreshold\x18\x02 \x01(\x05\x12!\n\x05point\x18\x03 \x01(\x0b\x32\x12.ShareHeader.Point\x1a\x1d\n\x05Point\x12\t\n\x01X\x18\x01 \x01(\x05\x12\t\n\x01Y\x18\x02 \x01(\x0c\"6\n\x0cStreamHeader\x12\x0e\n\x06header\x18\x01 \x01(\x0c\x12\x16\n\x0emax_block_size\x18\x02 \x01(\x05\"\'\n\x0bStreamBlock\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x62\x06proto3'
+  serialized_pb=b'\n\nhrcx.proto\"n\n\x0bShareHeader\x12\n\n\x02id\x18\x01 \x01(\x0c\x12\x11\n\tthreshold\x18\x02 \x01(\x05\x12!\n\x05point\x18\x03 \x01(\x0b\x32\x12.ShareHeader.Point\x1a\x1d\n\x05Point\x12\t\n\x01X\x18\x01 \x01(\x05\x12\t\n\x01Y\x18\x02 \x01(\x0c\":\n\x0cStreamHeader\x12\x0e\n\x06header\x18\x01 \x01(\x0c\x12\x1a\n\x12\x65ncrypted_filename\x18\x03 \x01(\x0c\"\'\n\x0bStreamBlock\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x62\x06proto3'
 )
 
 
@@ -125,9 +125,9 @@ _STREAMHEADER = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='max_block_size', full_name='StreamHeader.max_block_size', index=1,
-      number=2, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
+      name='encrypted_filename', full_name='StreamHeader.encrypted_filename', index=1,
+      number=3, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -144,7 +144,7 @@ _STREAMHEADER = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=126,
-  serialized_end=180,
+  serialized_end=184,
 )
 
 
@@ -182,8 +182,8 @@ _STREAMBLOCK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=182,
-  serialized_end=221,
+  serialized_start=186,
+  serialized_end=225,
 )
 
 _SHAREHEADER_POINT.containing_type = _SHAREHEADER

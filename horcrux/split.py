@@ -2,6 +2,7 @@
 
 from . import crypto
 from . import hrcx_pb2 as hrcx
+from . import io
 
 """
 input file
@@ -23,7 +24,6 @@ loop:
     encrypt pt
     wrap ct in streamblock
     distribute streamblock to horcruxes
-    |-write varint
-    |-write streamblock
 """
+
 

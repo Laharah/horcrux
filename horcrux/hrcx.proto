@@ -12,7 +12,6 @@ message ShareHeader {
 
 message StreamHeader {
 	bytes header = 1;
-	int32 max_block_size = 2;
 	bytes encrypted_filename = 3;
 }
 

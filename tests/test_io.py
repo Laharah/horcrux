@@ -2,6 +2,7 @@ import pytest
 
 import io
 import random
+from copy import deepcopy
 
 from horcrux import io as hio
 from horcrux.hrcx_pb2 import StreamBlock
@@ -89,8 +90,7 @@ def test_horcrux_write_stream_header(hx):
 def test_horcrux_init_write(hx, share):
     cryptoheader = b'u\x14Op\xa3\x13\x01Jt\xa8'
     hx.init_write(share, cryptoheader)
-    assert hx.id == 0
-    assert hx.threshold == 2
+    assert hx.hrcx_id == 0
     stream = hx.stream
     del hx
     stream.seek(0)
@@ -99,15 +99,14 @@ def test_horcrux_init_write(hx, share):
                        b'\x05\x12\x03123\x0c\n\nu\x14Op\xa3\x13\x01Jt\xa8')
 
 
-def test_horcrux_init_write(share):
+def test_horcrux_init_read(share):
     stream = io.BytesIO((b'\x1b\n\x100123456789abcdef\x10\x02\x1a'
                          b'\x05\x12\x03123\x0c\n\nu\x14Op\xa3\x13\x01Jt\xa8'))
     stream.seek(0)
     hx = hio.Horcrux(stream)
     hx.init_read()
     assert hx.share == share
-    assert hx.id == 0
-    assert hx.threshold == share.threshold
+    assert hx.hrcx_id == 0
 
 
 def test_horcrux_read_chunk(hx):
@@ -120,3 +119,16 @@ def test_horcrux_read_chunk(hx):
     _id, d = hx.read_chunk()
     assert d == data
     assert _id == 33
+
+
+def test_get_horcrux_files(tmpdir, share):
+    fn = 'test_horcrux'
+    shares = [deepcopy(share) for _ in range(4)]
+    crypto_header = b'1234567'
+    expected = b'\x1b\n\x100123456789abcdef\x10\x02\x1a\x05\x12\x03123\t\n\x071234567'
+    hxs = hio.get_horcrux_files(fn, shares, crypto_header, outdir=tmpdir)
+    assert len(hxs) == 4
+    for h in hxs:
+        h.stream.close()
+        with open(h.stream.name, 'rb') as fin:
+            assert fin.read() == expected

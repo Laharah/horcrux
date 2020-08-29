@@ -2,6 +2,7 @@
 from collections import deque
 from typing import Union, List
 from os import PathLike
+from pathlib import Path
 
 from . import sss
 from .hrcx_pb2 import ShareHeader, StreamHeader, StreamBlock
@@ -16,9 +17,8 @@ class Horcrux:
         self.stream = buf
         self.last_chunk_id = None
         self.last_chunk = None
-        self.id = None
+        self.hrcx_id = None
         self.share = None
-        self.threshold = None
         self.crypto_header = None
         self.encrypted_filename = None
 
@@ -29,8 +29,7 @@ class Horcrux:
         pt = sss.Point(share.point.X, share.point.Y)
         share = sss.Share(share.id, share.threshold, pt)
         self.share = share
-        self.id = share.point.X
-        self.threshold = share.threshold
+        self.hrcx_id = share.point.X
 
         stm_header = StreamHeader()
         stm_header.ParseFromString(self._read_message_bytes())
@@ -48,8 +47,7 @@ class Horcrux:
     def init_write(self, share, crypto_header, encrypted_filename=None):
         'write required horcrux headers and prepare stream for chunkwriting'
         self._write_share_header(share)
-        self.id = share.point.X
-        self.threshold = share.threshold
+        self.hrcx_id = share.point.X
         self._write_stream_header(crypto_header, encrypted_filename)
 
     def _write_bytes(self, b):
@@ -96,11 +94,17 @@ class Horcrux:
         return bytes(ary)
 
 
-def get_horcrux_files(filename: FileLike, num: int, outdir: FileLike) -> List[Horcrux]:
-    digits = len(str(num))
+def get_horcrux_files(filename: FileLike,
+                      shares: List[sss.Share],
+                      crypto_header: bytes,
+                      outdir: FileLike = '.') -> List[Horcrux]:
+    outdir = Path(outdir)
+    digits = len(str(len(shares)))
     horcruxes = []
-    for i in range(1, num + 1):
-        name = '{}_{:0{digits}}.hrcx'.format(filename, digits=digits)
+    for i, share in enumerate(shares, start=1):
+        name = '{}_{:0{digits}}.hrcx'.format(filename, i, digits=digits)
         f = open(outdir / name, 'wb')
+        hx = Horcrux(f)
+        hx.init_write(share, crypto_header)
         horcruxes.append(Horcrux(f))
     return horcruxes

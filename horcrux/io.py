@@ -3,6 +3,7 @@ from collections import deque
 from typing import Union, List
 from os import PathLike
 from pathlib import Path
+from io import BytesIO, IOBase
 
 from . import sss
 from .hrcx_pb2 import ShareHeader, StreamHeader, StreamBlock
@@ -11,9 +12,11 @@ from google.protobuf.internal.decoder import _DecodeVarint32
 
 FileLike = Union[str, bytes, PathLike]
 
+#TODO: split chunk id and data chunk so id can be peeked on large chunks + lots of files
+
 
 class Horcrux:
-    def __init__(self, buf: FileLike):
+    def __init__(self, buf: IOBase):
         self.stream = buf
         self.last_chunk_id = None
         self.last_chunk = None

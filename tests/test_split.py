@@ -1,6 +1,7 @@
 import pytest
 import random
 import io
+import itertools
 from unittest import mock
 
 from horcrux import split
@@ -32,7 +33,9 @@ def mem_hx(monkeypatch):
     monkeypatch.setattr(split.io, 'get_horcrux_files', ghx)
 
 
-def get_data(n):
+def get_data(n, consecutive=False):
+    if consecutive:
+        return bytes(i%256 for i in range(n))
     return bytes(random.getrandbits(8) for _ in range(n))
 
 
@@ -59,3 +62,25 @@ def test_full_distribute():
     for h in s.horcruxes:
         h.stream.seek(0)
         assert h.read_chunk() == (0, data.getvalue())
+
+def test_round_robin():
+    s = split.Stream(None, 5, 3)
+    data = io.BytesIO(get_data(4096))
+    s._round_robin_distribute(data, block_size=1)
+    ids = []
+    for h in s.horcruxes:
+        cids = set()
+        h.stream.seek(0)
+        while True:
+            try:
+                i, _ = h.read_chunk()
+            except IndexError:
+                break
+            cids.add(i)
+        ids.append(cids)
+    expected = set(range(4096))
+    for a, b, c in itertools.combinations(range(len(ids)), 3):
+        assert ids[a] | ids[b] | ids[c] == expected
+
+
+

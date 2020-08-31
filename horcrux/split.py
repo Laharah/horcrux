@@ -36,8 +36,10 @@ MAX_CHUNK_SIZE = 1024 * 1024 * 100  # 100 MiB
 def _ideal_block_size(size, n, k):
     return math.ceil(size / math.comb(n, k))
 
+
 def _block_counter(start=0):
     return itertools.count(start)
+
 
 class Stream:
     def __init__(self, in_stream, num_horcruxes, threshold, in_stream_size=None):
@@ -54,10 +56,26 @@ class Stream:
 
         self.block_counter = itertools.count()
 
-
     def _full_distribute(self, chunk):
+        'distribute single chunk to all horcruxes'
         ciphertext = self.crypto.encrypt(chunk.read())
         block_id = next(self.block_counter)
         for h in self.horcruxes:
             h.write_data_chunk(block_id, ciphertext)
-    
+
+    def _round_robin_distribute(self, chunk, block_size=DEFAULT_BLOCK_SIZE):
+        'distribute chunk to horcruxes in round robin fashion in blocks of block_size'
+
+        def cycler():
+            cyc = itertools.cycle(range(len(self.horcruxes)))
+            args = [iter(cyc)] * (self.n - self.k + 1)
+            return itertools.zip_longest(*args)
+        
+        cycle = cycler()
+        block = chunk.read(block_size)
+        while block:
+            block_id = next(self.block_counter)
+            ciphertext = self.crypto.encrypt(block)
+            for i in next(cycle):
+                self.horcruxes[i].write_data_chunk(block_id, ciphertext)
+            block = chunk.read(block_size)

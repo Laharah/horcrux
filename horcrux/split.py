@@ -34,7 +34,7 @@ MAX_CHUNK_SIZE = 1024 * 1024 * 100  # 100 MiB
 
 
 def _ideal_block_size(size, n, k):
-    return math.ceil(size / math.comb(n, k))
+    return math.ceil(size / math.comb(n, n - k + 1))
 
 
 def _block_counter(start=0):
@@ -55,6 +55,36 @@ class Stream:
         self.horcruxes = io.get_horcrux_files('temp', shares, header)
 
         self.block_counter = itertools.count()
+        self._round_robin_cycler = None
+
+    def _block_producer(self, chunk, block_size):
+        "produce id'd, encrypted blocks of block_size from chunk"
+        while block := chunk.read(block_size):
+            yield next(self.block_counter), self.crypto.encrypt(block)
+
+    def _smart_distribute(self, chunk, block_size):
+        "The prefered distribution method"
+        distribution = itertools.combinations(self.horcruxes, self.n - self.k + 1)
+        for block_id, block in self._block_producer(chunk, block_size):
+            for h in next(distribution):
+                h.write_data_chunk(block_id, block)
+
+    def _round_robin_distribute(self, chunk, block_size=DEFAULT_BLOCK_SIZE):
+        'distribute chunk to horcruxes in round robin fashion in blocks of block_size'
+        if self._round_robin_cycler is None:
+            # Cycler is re-used in case of chunk boundary issues
+            def cycler():
+                cyc = itertools.cycle(range(len(self.horcruxes)))
+                args = [iter(cyc)] * (self.n - self.k + 1)
+                return itertools.zip_longest(*args)
+
+            cycle = cycler()
+            self._round_robin_cycler = cycle
+        else:
+            cycle = self._round_robin_cycler
+        for block_id, block in self._block_producer(chunk, block_size):
+            for i in next(cycle):
+                self.horcruxes[i].write_data_chunk(block_id, block)
 
     def _full_distribute(self, chunk):
         'distribute single chunk to all horcruxes'
@@ -62,20 +92,3 @@ class Stream:
         block_id = next(self.block_counter)
         for h in self.horcruxes:
             h.write_data_chunk(block_id, ciphertext)
-
-    def _round_robin_distribute(self, chunk, block_size=DEFAULT_BLOCK_SIZE):
-        'distribute chunk to horcruxes in round robin fashion in blocks of block_size'
-
-        def cycler():
-            cyc = itertools.cycle(range(len(self.horcruxes)))
-            args = [iter(cyc)] * (self.n - self.k + 1)
-            return itertools.zip_longest(*args)
-        
-        cycle = cycler()
-        block = chunk.read(block_size)
-        while block:
-            block_id = next(self.block_counter)
-            ciphertext = self.crypto.encrypt(block)
-            for i in next(cycle):
-                self.horcruxes[i].write_data_chunk(block_id, ciphertext)
-            block = chunk.read(block_size)

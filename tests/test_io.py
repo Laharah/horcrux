@@ -56,10 +56,10 @@ def test_horcrux__read_message_bytes_large(hx):
     assert hx._read_message_bytes() == m3
 
 
-def test_horcrux_write_data_chunk(hx):
+def test_horcrux_write_data_block(hx):
     _id = 1
     data = b'my data'
-    hx.write_data_chunk(_id, data)
+    hx.write_data_block(_id, data)
     out = hx.stream.getvalue()
     assert out == b'\x0b\x08\x01\x12\x07my data'
 
@@ -109,14 +109,14 @@ def test_horcrux_init_read(share):
     assert hx.hrcx_id == 0
 
 
-def test_horcrux_read_chunk(hx):
+def test_horcrux_read_block(hx):
     data = bytes(random.getrandbits(8) for _ in range(30))
-    hx.write_data_chunk(33, data)
+    hx.write_data_block(33, data)
     stream = hx.stream
     stream.seek(0)
     del hx
     hx = hio.Horcrux(stream)
-    _id, d = hx.read_chunk()
+    _id, d = hx.read_block()
     assert d == data
     assert _id == 33
 

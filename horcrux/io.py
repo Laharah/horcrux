@@ -12,21 +12,21 @@ from google.protobuf.internal.decoder import _DecodeVarint32
 
 FileLike = Union[str, bytes, PathLike]
 
-#TODO: split chunk id and data chunk so id can be peeked on large chunks + lots of files
+#TODO: split block id and data block so id can be peeked on large blocks + lots of files
 
 
 class Horcrux:
     def __init__(self, buf: IOBase):
         self.stream = buf
-        self.last_chunk_id = None
-        self.last_chunk = None
+        self.last_block_id = None
+        self.last_block = None
         self.hrcx_id = None
         self.share = None
         self.crypto_header = None
         self.encrypted_filename = None
 
     def init_read(self):
-        'read headers from horcrux stream leaving stream cursor at begining of streamchunks'
+        'read headers from horcrux stream leaving stream cursor at begining of streamblocks'
         share = ShareHeader()
         share.ParseFromString(self._read_message_bytes())
         pt = sss.Point(share.point.X, share.point.Y)
@@ -39,16 +39,16 @@ class Horcrux:
         self.crypto_header = stm_header.header
         self.encrypted_filename = stm_header.encrypted_filename
 
-    def read_chunk(self):
-        'read the next data stream chunk, returning the chunk id and the data'
+    def read_block(self):
+        'read the next data stream block, returning the block id and the data'
         m = StreamBlock()
         m.ParseFromString(self._read_message_bytes())
-        self.last_chunk_id = m.id
-        self.last_chunk = m.data
+        self.last_block_id = m.id
+        self.last_block = m.data
         return m.id, m.data
 
     def init_write(self, share, crypto_header, encrypted_filename=None):
-        'write required horcrux headers and prepare stream for chunkwriting'
+        'write required horcrux headers and prepare stream for blockwriting'
         self._write_share_header(share)
         self.hrcx_id = share.point.X
         self._write_stream_header(crypto_header, encrypted_filename)
@@ -74,7 +74,7 @@ class Horcrux:
             sh.encrypted_filename = encrypted_filename
         self._write_bytes(sh.SerializeToString())
 
-    def write_data_chunk(self, _id, data):
+    def write_data_block(self, _id, data):
         'write a data block to Horcrux'
         block = StreamBlock()
         block.id = _id

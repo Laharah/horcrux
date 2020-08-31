@@ -67,7 +67,7 @@ class Stream:
         distribution = itertools.combinations(self.horcruxes, self.n - self.k + 1)
         for block_id, block in self._block_producer(chunk, block_size):
             for h in next(distribution):
-                h.write_data_chunk(block_id, block)
+                h.write_data_block(block_id, block)
 
     def _round_robin_distribute(self, chunk, block_size=DEFAULT_BLOCK_SIZE):
         'distribute chunk to horcruxes in round robin fashion in blocks of block_size'
@@ -84,11 +84,11 @@ class Stream:
             cycle = self._round_robin_cycler
         for block_id, block in self._block_producer(chunk, block_size):
             for i in next(cycle):
-                self.horcruxes[i].write_data_chunk(block_id, block)
+                self.horcruxes[i].write_data_block(block_id, block)
 
     def _full_distribute(self, chunk):
         'distribute single chunk to all horcruxes'
         ciphertext = self.crypto.encrypt(chunk.read())
         block_id = next(self.block_counter)
         for h in self.horcruxes:
-            h.write_data_chunk(block_id, ciphertext)
+            h.write_data_block(block_id, ciphertext)

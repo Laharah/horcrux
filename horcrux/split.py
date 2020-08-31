@@ -63,11 +63,19 @@ class Stream:
             yield next(self.block_counter), self.crypto.encrypt(block)
 
     def _smart_distribute(self, chunk, block_size):
-        "The prefered distribution method"
+        "The prefered distribution method. Chunk must be math.comb(n, n-k+1) blocks long."
         distribution = itertools.combinations(self.horcruxes, self.n - self.k + 1)
         for block_id, block in self._block_producer(chunk, block_size):
             for h in next(distribution):
                 h.write_data_block(block_id, block)
+
+        # Sanity Check
+        try:
+            next(distribution)
+        except StopIteration:
+            pass
+        else:
+            raise AssertionError("DISTRIBUTION INCOMPLETE! MIGHT NOT RECONSTRUCT!")
 
     def _round_robin_distribute(self, chunk, block_size=DEFAULT_BLOCK_SIZE):
         'distribute chunk to horcruxes in round robin fashion in blocks of block_size'

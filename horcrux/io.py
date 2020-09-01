@@ -18,7 +18,7 @@ FileLike = Union[str, bytes, PathLike]
 class Horcrux:
     def __init__(self, buf: IOBase):
         self.stream = buf
-        self.last_block_id = None
+        self.last_block_id = -1
         self.last_block = None
         self.hrcx_id = None
         self.share = None
@@ -103,11 +103,17 @@ def get_horcrux_files(filename: FileLike,
                       outdir: FileLike = '.') -> List[Horcrux]:
     outdir = Path(outdir)
     digits = len(str(len(shares)))
-    horcruxes = []
+    streams = []
     for i, share in enumerate(shares, start=1):
         name = '{}_{:0{digits}}.hrcx'.format(filename, i, digits=digits)
         f = open(outdir / name, 'wb')
-        hx = Horcrux(f)
+        streams.append(f)
+    return init_horcrux_streams(streams, shares, crypto_header)
+
+
+def init_horcrux_streams(streams, shares, crypto_header):
+    assert len(streams) == len(shares)
+    horcruxes = [Horcrux(s) for s in streams]
+    for hx, share in zip(horcruxes, shares):
         hx.init_write(share, crypto_header)
-        horcruxes.append(Horcrux(f))
     return horcruxes

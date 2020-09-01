@@ -36,12 +36,18 @@ class Stream:
         self.block_counter = itertools.count()
         self._round_robin_cycler = None
 
-    def init_horcruxes(self):
+    def init_horcruxes(self, streams=None):
         key = crypto.gen_key()
         header = self.crypto.init_encrypt(key)
         shares = sss.generate_shares(self.n, self.k, key)
         del key
-        self.horcruxes = io.get_horcrux_files(self.filename, shares, header, self.outdir)
+        if streams:
+            if len(streams) != self.n:
+                raise ValueError(f'Need {self.n} streams to init.')
+            self.horcruxes = io.init_horcrux_streams(streams, shares, header)
+        else:
+            self.horcruxes = io.get_horcrux_files(self.filename, shares, header,
+                                                  self.outdir)
 
     def distribute(self, istream=None, size=None):
         if not self.horcruxes:

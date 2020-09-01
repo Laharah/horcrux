@@ -27,7 +27,7 @@ def mem_hx(monkeypatch):
     'in-memory, no header horcruxes for testing'
     ghx = mock.create_autospec(split.io.get_horcrux_files)
 
-    def get_mem_horcruxes(_, shares, _x):
+    def get_mem_horcruxes(_, shares, _x, outdir=None):
         return [split.io.Horcrux(io.BytesIO()) for _ in range(len(shares))]
 
     ghx.side_effect = get_mem_horcruxes
@@ -103,3 +103,74 @@ def test_smart_distribute():
     block_size = split._ideal_block_size(4096, 5, 3)
     s._smart_distribute(data, block_size)
     assert_recombinable(s, range(4096 // block_size + 1), exclusive=True)
+
+
+def test_bad_smart_distribute():
+    s = split.Stream(None, 5, 3)
+    data = io.BytesIO(get_data(4096))
+    block_size = 1000
+    with pytest.raises(AssertionError):
+        s._smart_distribute(data, block_size)
+    data = io.BytesIO(get_data(4096))
+    bloc_size = 100
+    with pytest.raises(StopIteration):
+        s._smart_distribute(data, 100)
+
+
+def test_distribute_smart(monkeypatch):
+    infile = io.BytesIO(get_data(1024 * 1024 * 2, True))
+    s = split.Stream(None, 5, 3)
+    size = len(infile.getbuffer())
+    s.distribute(infile, size)
+    assert infile.tell() == size
+    s = split.Stream(None, 5, 3)
+    infile.seek(0)
+    mock_sd = mock.create_autospec(s._smart_distribute)
+    monkeypatch.setattr(s, '_smart_distribute', mock_sd)
+    s.distribute(infile, size)
+    mock_sd.assert_called_once()
+
+
+def test_distribute_smart_unknown_size(monkeypatch):
+    infile = io.BytesIO(get_data(1024 * 1024 * 2, True))
+    monkeypatch.setattr(split, 'MAX_CHUNK_SIZE', 1024 * 1024)
+    s = split.Stream(None, 5, 3)
+    s.distribute(infile)
+    assert infile.tell() == 1024**2 * 2
+    infile.seek(0)
+    mock_sd = mock.create_autospec(s._smart_distribute)
+    s = split.Stream(None, 5, 3)
+    monkeypatch.setattr(s, '_smart_distribute', mock_sd)
+    s.distribute(infile)
+    assert mock_sd.call_count == 2
+
+
+def test_distribute_smart_then_full(monkeypatch):
+    infile = io.BytesIO(get_data(1025))
+    monkeypatch.setattr(split, 'MAX_CHUNK_SIZE', 1024)
+    s = split.Stream(None, 5, 3)
+    mock_sd = mock.create_autospec(s._smart_distribute)
+    mock_fd = mock.create_autospec(s._full_distribute)
+    monkeypatch.setattr(s, '_smart_distribute', mock_sd)
+    monkeypatch.setattr(s, '_full_distribute', mock_fd)
+    s.distribute(infile)
+    mock_sd.assert_called_once()
+    mock_fd.assert_called_once()
+
+
+def test_distribute_round_robin(monkeypatch):
+    infile = io.BytesIO(get_data(42))
+    monkeypatch.setattr(split, 'MAX_CHUNK_SIZE', 20)
+    monkeypatch.setattr(split, 'DEFAULT_BLOCK_SIZE', 20)
+    s = split.Stream(None, 5, 3)
+    mock_rr = mock.create_autospec(s._round_robin_distribute)
+    monkeypatch.setattr(s, '_round_robin_distribute', mock_rr)
+    s.distribute(infile)
+    assert mock_rr.call_count == 2
+
+
+def test_distribute_no_args():
+    infile = io.BytesIO(get_data(1024**2))
+    s = split.Stream(infile, 5, 3, in_stream_size=1024**2)
+    s.distribute()
+    assert infile.tell() == 1024**2

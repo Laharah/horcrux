@@ -5,28 +5,6 @@ import itertools
 from . import crypto
 from . import sss
 from . import io
-"""
-# Scenarios
-    * tiny file
-    * normal file
-    * humungus file
-    * tiny stream
-    * unknown stream
-    * NCK too big
-
-Strat2:
-
-    if known_size and MIN_BLOCK_SIZE <= ideal_block_size <= MAX_CHUNK_SIZE:
-           smart distribute directly from stream
-    else:
-        read MAX_CHUNK_SIZE into bytesio(memoryview):
-            if MIN_BLOCK_SIZE <= ideal_block_size(len(mv), n, k)
-                smart_distribute chunk
-            elif size < 4k:
-                full distribute
-            else:
-                4k round robin
-"""
 
 MIN_BLOCK_SIZE = 20
 DEFAULT_BLOCK_SIZE = 4096
@@ -42,8 +20,15 @@ def _block_counter(start=0):
 
 
 class Stream:
-    def __init__(self, in_stream, num_horcruxes, threshold, in_stream_size=None):
-        self.i_stream = in_stream
+    def __init__(self,
+                 instream,
+                 num_horcruxes,
+                 threshold,
+                 in_stream_size=None,
+                 filename=None,
+                 outdir='.'):
+        self.instream = instream
+        self.stream_size = in_stream_size
         self.n = num_horcruxes
         self.k = threshold
 
@@ -52,10 +37,30 @@ class Stream:
         header = self.crypto.init_encrypt(key)
         shares = sss.generate_shares(self.n, self.k, key)
         del key
-        self.horcruxes = io.get_horcrux_files('temp', shares, header)
+        filename = filename if filename else 'temp'
+        self.horcruxes = io.get_horcrux_files(filename, shares, header, outdir=outdir)
 
         self.block_counter = itertools.count()
         self._round_robin_cycler = None
+
+    def distribute(self, istream=None, size=None):
+        instream = self.instream if istream is None else istream
+        size = size if size else self.stream_size
+        if size is not None:
+            ibs = _ideal_block_size(size, self.n, self.k)
+            if MIN_BLOCK_SIZE <= ibs <= MAX_CHUNK_SIZE:
+                self._smart_distribute(instream, ibs)
+                return
+        while mv := memoryview(instream.read(MAX_CHUNK_SIZE)):
+            chunk_size = len(mv)
+            chunk = io.BytesIO(mv)
+            chunk_ibs = _ideal_block_size(chunk_size, self.n, self.k)
+            if MIN_BLOCK_SIZE <= chunk_ibs:
+                self._smart_distribute(chunk, chunk_ibs)
+            elif chunk_size < DEFAULT_BLOCK_SIZE:
+                self._full_distribute(chunk)
+            else:
+                self._round_robin_distribute(chunk)
 
     def _block_producer(self, chunk, block_size):
         "produce id'd, encrypted blocks of block_size from chunk"

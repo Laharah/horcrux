@@ -52,13 +52,16 @@ def test_ideal_block_size():
 
 def test_stream_create_horcrux():
     s = split.Stream(io.BytesIO(), 2, 2)
+    s.init_horcruxes()
     assert len(s.horcruxes) == 2
     s = split.Stream(io.BytesIO, 5, 3)
+    s.init_horcruxes()
     assert len(s.horcruxes) == 5
 
 
 def test_full_distribute():
     s = split.Stream(None, 5, 2)
+    s.init_horcruxes()
     data = io.BytesIO(get_data(10))
     s._full_distribute(data)
     for h in s.horcruxes:
@@ -92,6 +95,7 @@ def assert_recombinable(s, expected_ids, exclusive=False):
 
 def test_round_robin():
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     data = io.BytesIO(get_data(4096))
     s._round_robin_distribute(data, block_size=1)
     assert_recombinable(s, range(4096))
@@ -99,6 +103,7 @@ def test_round_robin():
 
 def test_smart_distribute():
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     data = io.BytesIO(get_data(4096))
     block_size = split._ideal_block_size(4096, 5, 3)
     s._smart_distribute(data, block_size)
@@ -107,6 +112,7 @@ def test_smart_distribute():
 
 def test_bad_smart_distribute():
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     data = io.BytesIO(get_data(4096))
     block_size = 1000
     with pytest.raises(AssertionError):
@@ -120,10 +126,12 @@ def test_bad_smart_distribute():
 def test_distribute_smart(monkeypatch):
     infile = io.BytesIO(get_data(1024 * 1024 * 2, True))
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     size = len(infile.getbuffer())
     s.distribute(infile, size)
     assert infile.tell() == size
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     infile.seek(0)
     mock_sd = mock.create_autospec(s._smart_distribute)
     monkeypatch.setattr(s, '_smart_distribute', mock_sd)
@@ -135,11 +143,13 @@ def test_distribute_smart_unknown_size(monkeypatch):
     infile = io.BytesIO(get_data(1024 * 1024 * 2, True))
     monkeypatch.setattr(split, 'MAX_CHUNK_SIZE', 1024 * 1024)
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     s.distribute(infile)
     assert infile.tell() == 1024**2 * 2
     infile.seek(0)
     mock_sd = mock.create_autospec(s._smart_distribute)
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     monkeypatch.setattr(s, '_smart_distribute', mock_sd)
     s.distribute(infile)
     assert mock_sd.call_count == 2
@@ -149,6 +159,7 @@ def test_distribute_smart_then_full(monkeypatch):
     infile = io.BytesIO(get_data(1025))
     monkeypatch.setattr(split, 'MAX_CHUNK_SIZE', 1024)
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     mock_sd = mock.create_autospec(s._smart_distribute)
     mock_fd = mock.create_autospec(s._full_distribute)
     monkeypatch.setattr(s, '_smart_distribute', mock_sd)
@@ -163,6 +174,7 @@ def test_distribute_round_robin(monkeypatch):
     monkeypatch.setattr(split, 'MAX_CHUNK_SIZE', 20)
     monkeypatch.setattr(split, 'DEFAULT_BLOCK_SIZE', 20)
     s = split.Stream(None, 5, 3)
+    s.init_horcruxes()
     mock_rr = mock.create_autospec(s._round_robin_distribute)
     monkeypatch.setattr(s, '_round_robin_distribute', mock_rr)
     s.distribute(infile)
@@ -172,5 +184,6 @@ def test_distribute_round_robin(monkeypatch):
 def test_distribute_no_args():
     infile = io.BytesIO(get_data(1024**2))
     s = split.Stream(infile, 5, 3, in_stream_size=1024**2)
+    s.init_horcruxes()
     s.distribute()
     assert infile.tell() == 1024**2

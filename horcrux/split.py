@@ -15,10 +15,6 @@ def _ideal_block_size(size, n, k):
     return math.ceil(size / math.comb(n, n - k + 1))
 
 
-def _block_counter(start=0):
-    return itertools.count(start)
-
-
 class Stream:
     def __init__(self,
                  instream,
@@ -32,16 +28,20 @@ class Stream:
         self.n = num_horcruxes
         self.k = threshold
 
-        key = crypto.gen_key()
         self.crypto = crypto.Stream()
-        header = self.crypto.init_encrypt(key)
-        shares = sss.generate_shares(self.n, self.k, key)
-        del key
-        filename = filename if filename else 'temp'
-        self.horcruxes = io.get_horcrux_files(filename, shares, header, outdir=outdir)
+        self.filename = filename if filename else 'temp'
+        self.outdir = outdir
+        self.horcruxes = None
 
         self.block_counter = itertools.count()
         self._round_robin_cycler = None
+
+    def init_horcruxes(self):
+        key = crypto.gen_key()
+        header = self.crypto.init_encrypt(key)
+        shares = sss.generate_shares(self.n, self.k, key)
+        del key
+        self.horcruxes = io.get_horcrux_files(self.filename, shares, header, self.outdir)
 
     def distribute(self, istream=None, size=None):
         instream = self.instream if istream is None else istream

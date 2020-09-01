@@ -57,6 +57,9 @@ def test_stream_create_horcrux():
     s = split.Stream(io.BytesIO, 5, 3)
     s.init_horcruxes()
     assert len(s.horcruxes) == 5
+    s = split.Stream(io.BytesIO(), 5, 3)
+    with pytest.raises(FileNotFoundError):
+        s.distribute()
 
 
 def test_full_distribute():

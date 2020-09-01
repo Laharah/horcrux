@@ -44,6 +44,8 @@ class Stream:
         self.horcruxes = io.get_horcrux_files(self.filename, shares, header, self.outdir)
 
     def distribute(self, istream=None, size=None):
+        if not self.horcruxes:
+            raise FileNotFoundError('Horcruxes not initialized.')
         instream = self.instream if istream is None else istream
         size = size if size else self.stream_size
         if size is not None:

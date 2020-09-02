@@ -110,12 +110,11 @@ class Horcrux:
             self.stream.seek((new_pos + msg_len) - read, 1)
             return m if not skip else None
         if skip:
-            if self.stream.seekable():
+            try:
                 self.stream.seek(msg_len - len(buff), 1)
-                return
-            else:
+            except OSError:
                 self.stream.read(msg_len - len(buff))
-                return
+            return
         ary = bytearray(buff)
         ary.extend(self.stream.read(msg_len - len(buff)))
         return bytes(ary)

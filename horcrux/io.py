@@ -52,7 +52,6 @@ class Horcrux:
             pass
         self._read_next_block_id()
 
-
     def _read_next_block_id(self):
         bid = BlockID()
         try:
@@ -123,7 +122,8 @@ class Horcrux:
 def get_horcrux_files(filename: FileLike,
                       shares: List[sss.Share],
                       crypto_header: bytes,
-                      outdir: FileLike = '.') -> List[Horcrux]:
+                      outdir: FileLike = '.',
+                      encrypted_filename: Union[bytes, None] = None) -> List[Horcrux]:
     outdir = Path(outdir)
     digits = len(str(len(shares)))
     streams = []
@@ -131,12 +131,12 @@ def get_horcrux_files(filename: FileLike,
         name = '{}_{:0{digits}}.hrcx'.format(filename, i, digits=digits)
         f = open(outdir / name, 'wb')
         streams.append(f)
-    return init_horcrux_streams(streams, shares, crypto_header)
+    return init_horcrux_streams(streams, shares, crypto_header, encrypted_filename)
 
 
-def init_horcrux_streams(streams, shares, crypto_header):
+def init_horcrux_streams(streams, shares, crypto_header, encrypted_filename=None):
     assert len(streams) == len(shares)
     horcruxes = [Horcrux(s) for s in streams]
     for hx, share in zip(horcruxes, shares):
-        hx.init_write(share, crypto_header)
+        hx.init_write(share, crypto_header, encrypted_filename)
     return horcruxes

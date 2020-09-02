@@ -1,4 +1,5 @@
 from nacl.bindings import crypto_secretstream as lib
+from nacl.secret import SecretBox
 
 
 def gen_key():

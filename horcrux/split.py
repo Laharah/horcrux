@@ -40,11 +40,13 @@ class Stream:
         key = crypto.gen_key()
         header = self.crypto.init_encrypt(key)
         shares = sss.generate_shares(self.n, self.k, key)
+        encrypted_filename = crypto.SecretBox(key).encrypt(self.filename.encode())
         del key
         if streams:
             if len(streams) != self.n:
                 raise ValueError(f'Need {self.n} streams to init.')
-            self.horcruxes = io.init_horcrux_streams(streams, shares, header)
+            self.horcruxes = io.init_horcrux_streams(streams, shares, header,
+                                                     encrypted_filename)
         else:
             self.horcruxes = io.get_horcrux_files(self.filename, shares, header,
                                                   self.outdir)

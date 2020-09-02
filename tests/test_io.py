@@ -96,24 +96,28 @@ def test_horcrux_write_stream_header(hx):
 
 def test_horcrux_init_write(hx, share):
     cryptoheader = b'u\x14Op\xa3\x13\x01Jt\xa8'
-    hx.init_write(share, cryptoheader)
+    hx.init_write(share, cryptoheader, encrypted_filename=b'slkfjwnfa;')
     assert hx.hrcx_id == 0
     stream = hx.stream
     del hx
     stream.seek(0)
     headers = stream.getvalue()
-    assert headers == (b'\x1b\n\x100123456789abcdef\x10\x02\x1a'
-                       b'\x05\x12\x03123\x0c\n\nu\x14Op\xa3\x13\x01Jt\xa8')
+    print(headers)
+    assert headers == (
+        b'\x1b\n\x100123456789abcdef\x10\x02\x1a'
+        b'\x05\x12\x03123\x18\n\nu\x14Op\xa3\x13\x01Jt\xa8\x1a\nslkfjwnfa;')
 
 
 def test_horcrux_init_read(share):
-    stream = io.BytesIO((b'\x1b\n\x100123456789abcdef\x10\x02\x1a'
-                         b'\x05\x12\x03123\x0c\n\nu\x14Op\xa3\x13\x01Jt\xa8'))
+    stream = io.BytesIO(
+        b'\x1b\n\x100123456789abcdef\x10\x02\x1a'
+        b'\x05\x12\x03123\x18\n\nu\x14Op\xa3\x13\x01Jt\xa8\x1a\nslkfjwnfa;')
     stream.seek(0)
     hx = hio.Horcrux(stream)
     hx.init_read()
     assert hx.share == share
     assert hx.hrcx_id == 0
+    assert hx.encrypted_filename == b'slkfjwnfa;'
     assert hx.next_block_id == None
 
 
@@ -133,6 +137,7 @@ def test_horcrux_read_block(hx):
     _id, d = hx.read_block()
     assert d == data2
     assert _id == 45
+
 
 def test_horcrux_skip_block(hx):
     data1 = bytes(random.getrandbits(8) for _ in range(30))

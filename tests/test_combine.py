@@ -8,7 +8,7 @@ import itertools
 
 
 def make_out_streams(fin, n, k):
-    s = split.Stream(fin, n, k)
+    s = split.Stream(fin, n, k, filename='My_Data.txt')
     out_streams = [io.BytesIO() for _ in range(n)]
     s.init_horcruxes(out_streams)
     s.distribute()
@@ -62,3 +62,14 @@ def test_fail_init_crypto(hx_streams, alt_streams):
 def test_from_streams(hx_streams):
     streams, original = hx_streams
     assert combine.from_streams(streams) == original
+
+def test_from_files(hx_streams, tmp_path):
+    streams, original = hx_streams
+    for i, s in enumerate(streams):
+        with open(tmp_path/f'temp_{i}.hrcx', 'wb') as fout:
+            fout.write(s.getvalue())
+    files = list(tmp_path.iterdir())
+    of = combine.from_files(files, outdir=tmp_path)
+    assert of == tmp_path / "My_Data.txt"
+    assert of.read_bytes() == original
+

@@ -38,20 +38,15 @@ def from_streams(streams: Sequence[io.Horcrux],
     dead = set()
     while live:
         for h in live:
-            if h.last_block_id == current_id:
-                output.write(crypto.decrypt(h.last_block))
+            if h.next_block_id == current_id:
+                output.write(crypto.decrypt(h.read_block()[1]))
                 current_id += 1
                 break
-            elif h.last_block_id < current_id:
-                try:
-                    bid, block = h.read_block()
-                except IndexError:
-                    dead.add(h)
-                    continue
-                if bid == current_id:
-                    output.write(crypto.decrypt(block))
-                    current_id += 1
-                    break
+            elif h.next_block_id is None:
+                dead.add(h)
+                continue
+            elif h.next_block_id < current_id:
+                h.skip_block()
         live -= dead
     if not out_stream:
         return output.getvalue()

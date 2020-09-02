@@ -6,20 +6,16 @@ from pathlib import Path
 from io import BytesIO, IOBase
 
 from . import sss
-from .hrcx_pb2 import ShareHeader, StreamHeader, StreamBlock
+from .hrcx_pb2 import ShareHeader, StreamHeader, StreamBlock, BlockID
 from google.protobuf.internal.encoder import _VarintBytes
 from google.protobuf.internal.decoder import _DecodeVarint32
 
 FileLike = Union[str, bytes, PathLike]
 
-#TODO: split block id and data block so id can be peeked on large blocks + lots of files
-
 
 class Horcrux:
     def __init__(self, buf: IOBase):
         self.stream = buf
-        self.last_block_id = -1
-        self.last_block = None
         self.hrcx_id = None
         self.share = None
         self.crypto_header = None
@@ -38,14 +34,33 @@ class Horcrux:
         stm_header.ParseFromString(self._read_message_bytes())
         self.crypto_header = stm_header.header
         self.encrypted_filename = stm_header.encrypted_filename
+        self._read_next_block_id()
 
     def read_block(self):
         'read the next data stream block, returning the block id and the data'
         m = StreamBlock()
         m.ParseFromString(self._read_message_bytes())
-        self.last_block_id = m.id
-        self.last_block = m.data
-        return m.id, m.data
+        this_id = self.next_block_id
+        self._read_next_block_id()
+        return this_id, m.data
+
+    def skip_block(self):
+        'efficiently skip reading the next block'
+        try:
+            self._read_message_bytes(skip=True)
+        except IndexError:
+            pass
+        self._read_next_block_id()
+
+
+    def _read_next_block_id(self):
+        bid = BlockID()
+        try:
+            bid.ParseFromString(self._read_message_bytes())
+        except IndexError:
+            self.next_block_id = None
+            return
+        self.next_block_id = bid.id
 
     def init_write(self, share, crypto_header, encrypted_filename=None):
         'write required horcrux headers and prepare stream for blockwriting'
@@ -76,12 +91,14 @@ class Horcrux:
 
     def write_data_block(self, _id, data):
         'write a data block to Horcrux'
+        bid = BlockID()
         block = StreamBlock()
-        block.id = _id
+        bid.id = _id
         block.data = data
+        self._write_bytes(bid.SerializeToString())
         self._write_bytes(block.SerializeToString())
 
-    def _read_message_bytes(self):
+    def _read_message_bytes(self, skip=False):
         'read the next delimited message as bytes from the horcrux'
         buff = deque(self.stream.read(10))
         read = len(buff)
@@ -91,7 +108,14 @@ class Horcrux:
         if msg_len <= len(buff):
             m = bytes(list(buff)[:msg_len])
             self.stream.seek((new_pos + msg_len) - read, 1)
-            return m
+            return m if not skip else None
+        if skip:
+            if self.stream.seekable():
+                self.stream.seek(msg_len - len(buff), 1)
+                return
+            else:
+                self.stream.read(msg_len - len(buff))
+                return
         ary = bytearray(buff)
         ary.extend(self.stream.read(msg_len - len(buff)))
         return bytes(ary)

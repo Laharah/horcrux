@@ -69,6 +69,7 @@ def test_full_distribute():
     s._full_distribute(data)
     for h in s.horcruxes:
         h.stream.seek(0)
+        h._read_next_block_id()
         assert h.read_block() == (0, data.getvalue())
 
 
@@ -77,6 +78,7 @@ def assert_recombinable(s, expected_ids, exclusive=False):
     for h in s.horcruxes:
         cids = set()
         h.stream.seek(0)
+        h._read_next_block_id()
         while True:
             try:
                 i, _ = h.read_block()

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\nhrcx.proto\"n\n\x0bShareHeader\x12\n\n\x02id\x18\x01 \x01(\x0c\x12\x11\n\tthreshold\x18\x02 \x01(\x05\x12!\n\x05point\x18\x03 \x01(\x0b\x32\x12.ShareHeader.Point\x1a\x1d\n\x05Point\x12\t\n\x01X\x18\x01 \x01(\x05\x12\t\n\x01Y\x18\x02 \x01(\x0c\":\n\x0cStreamHeader\x12\x0e\n\x06header\x18\x01 \x01(\x0c\x12\x1a\n\x12\x65ncrypted_filename\x18\x03 \x01(\x0c\"\'\n\x0bStreamBlock\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x62\x06proto3'
+  serialized_pb=b'\n\nhrcx.proto\"n\n\x0bShareHeader\x12\n\n\x02id\x18\x01 \x01(\x0c\x12\x11\n\tthreshold\x18\x02 \x01(\x05\x12!\n\x05point\x18\x03 \x01(\x0b\x32\x12.ShareHeader.Point\x1a\x1d\n\x05Point\x12\t\n\x01X\x18\x01 \x01(\x05\x12\t\n\x01Y\x18\x02 \x01(\x0c\":\n\x0cStreamHeader\x12\x0e\n\x06header\x18\x01 \x01(\x0c\x12\x1a\n\x12\x65ncrypted_filename\x18\x03 \x01(\x0c\"\x15\n\x07\x42lockID\x12\n\n\x02id\x18\x01 \x01(\x05\"\x1b\n\x0bStreamBlock\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x62\x06proto3'
 )
 
 
@@ -148,6 +148,38 @@ _STREAMHEADER = _descriptor.Descriptor(
 )
 
 
+_BLOCKID = _descriptor.Descriptor(
+  name='BlockID',
+  full_name='BlockID',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='BlockID.id', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=186,
+  serialized_end=207,
+)
+
+
 _STREAMBLOCK = _descriptor.Descriptor(
   name='StreamBlock',
   full_name='StreamBlock',
@@ -157,14 +189,7 @@ _STREAMBLOCK = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='StreamBlock.id', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='data', full_name='StreamBlock.data', index=1,
+      name='data', full_name='StreamBlock.data', index=0,
       number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -182,14 +207,15 @@ _STREAMBLOCK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=186,
-  serialized_end=225,
+  serialized_start=209,
+  serialized_end=236,
 )
 
 _SHAREHEADER_POINT.containing_type = _SHAREHEADER
 _SHAREHEADER.fields_by_name['point'].message_type = _SHAREHEADER_POINT
 DESCRIPTOR.message_types_by_name['ShareHeader'] = _SHAREHEADER
 DESCRIPTOR.message_types_by_name['StreamHeader'] = _STREAMHEADER
+DESCRIPTOR.message_types_by_name['BlockID'] = _BLOCKID
 DESCRIPTOR.message_types_by_name['StreamBlock'] = _STREAMBLOCK
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -214,6 +240,13 @@ StreamHeader = _reflection.GeneratedProtocolMessageType('StreamHeader', (_messag
   # @@protoc_insertion_point(class_scope:StreamHeader)
   })
 _sym_db.RegisterMessage(StreamHeader)
+
+BlockID = _reflection.GeneratedProtocolMessageType('BlockID', (_message.Message,), {
+  'DESCRIPTOR' : _BLOCKID,
+  '__module__' : 'hrcx_pb2'
+  # @@protoc_insertion_point(class_scope:BlockID)
+  })
+_sym_db.RegisterMessage(BlockID)
 
 StreamBlock = _reflection.GeneratedProtocolMessageType('StreamBlock', (_message.Message,), {
   'DESCRIPTOR' : _STREAMBLOCK,

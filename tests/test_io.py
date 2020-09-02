@@ -19,6 +19,12 @@ def share():
     return Share(b'0123456789abcdef', 2, Point(0, b'123'))
 
 
+@pytest.fixture()
+def two_block_hrcx():
+    return io.BytesIO(b'\x1b\n\x100123456789ABCDEF\x10\x04\x1a\x05\x12\x03123\x08\n\x06'
+                      b'566784\x00\x08\x12\x06abcdef\x02\x08\x01\n\x12\x08ghijklmn')
+
+
 def test_init_horcrux():
     h = hio.Horcrux(io.BytesIO())
 
@@ -61,7 +67,8 @@ def test_horcrux_write_data_block(hx):
     data = b'my data'
     hx.write_data_block(_id, data)
     out = hx.stream.getvalue()
-    assert out == b'\x0b\x08\x01\x12\x07my data'
+    print(out)
+    assert out == b'\x02\x08\x01\t\x12\x07my data'
 
 
 def test_horcrux_write_share_header(hx, share):
@@ -107,18 +114,40 @@ def test_horcrux_init_read(share):
     hx.init_read()
     assert hx.share == share
     assert hx.hrcx_id == 0
+    assert hx.next_block_id == None
 
 
 def test_horcrux_read_block(hx):
-    data = bytes(random.getrandbits(8) for _ in range(30))
-    hx.write_data_block(33, data)
+    data1 = bytes(random.getrandbits(8) for _ in range(30))
+    data2 = bytes(random.getrandbits(8) for _ in range(30))
+    hx.write_data_block(33, data1)
+    hx.write_data_block(45, data2)
     stream = hx.stream
     stream.seek(0)
     del hx
     hx = hio.Horcrux(stream)
+    hx._read_next_block_id()
     _id, d = hx.read_block()
-    assert d == data
+    assert d == data1
     assert _id == 33
+    _id, d = hx.read_block()
+    assert d == data2
+    assert _id == 45
+
+def test_horcrux_skip_block(hx):
+    data1 = bytes(random.getrandbits(8) for _ in range(30))
+    data2 = bytes(random.getrandbits(8) for _ in range(30))
+    hx.write_data_block(33, data1)
+    hx.write_data_block(45, data2)
+    stream = hx.stream
+    stream.seek(0)
+    del hx
+    hx = hio.Horcrux(stream)
+    hx._read_next_block_id()
+    hx.skip_block()
+    _id, d = hx.read_block()
+    assert d == data2
+    assert _id == 45
 
 
 def test_get_horcrux_files(tmpdir, share):

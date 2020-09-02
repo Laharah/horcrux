@@ -15,7 +15,10 @@ message StreamHeader {
 	bytes encrypted_filename = 3;
 }
 
-message StreamBlock {
+message BlockID {
 	int32 id = 1;
+}
+
+message StreamBlock {
 	bytes data = 2;
 }

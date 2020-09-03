@@ -8,7 +8,7 @@ import itertools
 
 
 def make_out_streams(fin, n, k):
-    s = split.Stream(fin, n, k, filename='My_Data.txt')
+    s = split.Stream(fin, n, k, stream_name='My_Data.txt')
     out_streams = [io.BytesIO() for _ in range(n)]
     s.init_horcruxes(out_streams)
     s.distribute()
@@ -20,8 +20,9 @@ with open('tests/data.txt', 'rb') as fin:
     fin.seek(0)
     try:
         out_streams = make_out_streams(fin, 5, 3)
-    except:
+    except Exception as e:
         pytestmark = pytest.mark.skip(reason='Failed to split files, test split module.')
+        raise
 
     HXD = [st.getvalue() for st in out_streams]
     fin.seek(0)

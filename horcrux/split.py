@@ -1,6 +1,7 @@
 'split a single file-like stream into horcruxes'
 import math
 import itertools
+import datetime
 
 from . import crypto
 from . import sss
@@ -17,19 +18,46 @@ def _ideal_block_size(size, n, k):
 
 class Stream:
     def __init__(self,
-                 instream,
+                 in_stream,
                  num_horcruxes,
                  threshold,
                  in_stream_size=None,
-                 filename=None,
-                 outdir='.'):
-        self.instream = instream
+                 stream_name=None,
+                 outdir='.',
+                 horcrux_title=None):
+        """
+        Create `num_horcruxes` from in_stream and require that `threshold` are needed to
+        reassemble the original stream. 
+
+        in_stream: stream to be split
+
+        num_horcruxes: how many horcruxes to make
+
+        threshold: how many horcruxes are required to recover in_stream
+
+        in_stream_size: size of in_stream in bytes. Allows for more efficient
+        distribution.
+
+        stream_name: filename of the reconstructed stream optional
+
+        out_dir: where to place horcrux file streams
+
+        horcrux_title: What to title the horcrux files. eg: my_horcrux ->
+        my_horcrux_01.hcrx """
+
+        self.in_stream = in_stream
         self.stream_size = in_stream_size
         self.n = num_horcruxes
         self.k = threshold
 
         self.crypto = crypto.Stream()
-        self.filename = filename if filename else 'temp'
+        self.stream_name = stream_name
+        if horcrux_title is None:
+            dt = datetime.date.today()
+            dt = dt.strftime('%Y-%m-%d--%H-%M-%S')
+            self.horcrux_title = f'Horcrux_{dt}'
+        else:
+            self.horcrux_title = horcrux_title
         self.outdir = outdir
         self.horcruxes = None
 
@@ -40,7 +68,10 @@ class Stream:
         key = crypto.gen_key()
         header = self.crypto.init_encrypt(key)
         shares = sss.generate_shares(self.n, self.k, key)
-        encrypted_filename = crypto.SecretBox(key).encrypt(self.filename.encode())
+        if self.stream_name:
+            encrypted_filename = crypto.SecretBox(key).encrypt(self.stream_name.encode())
+        else:
+            encrypted_filename = None
         del key
         if streams:
             if len(streams) != self.n:
@@ -48,20 +79,20 @@ class Stream:
             self.horcruxes = io.init_horcrux_streams(streams, shares, header,
                                                      encrypted_filename)
         else:
-            self.horcruxes = io.get_horcrux_files(self.filename, shares, header,
-                                                  self.outdir)
+            self.horcruxes = io.get_horcrux_files(self.horcrux_title, shares, header,
+                                                  self.outdir, encrypted_filename)
 
     def distribute(self, istream=None, size=None):
         if not self.horcruxes:
             raise FileNotFoundError('Horcruxes not initialized.')
-        instream = self.instream if istream is None else istream
+        in_stream = self.in_stream if istream is None else istream
         size = size if size else self.stream_size
         if size is not None:
             ibs = _ideal_block_size(size, self.n, self.k)
             if MIN_BLOCK_SIZE <= ibs <= MAX_CHUNK_SIZE:
-                self._smart_distribute(instream, ibs)
+                self._smart_distribute(in_stream, ibs)
                 return
-        while mv := memoryview(instream.read(MAX_CHUNK_SIZE)):
+        while mv := memoryview(in_stream.read(MAX_CHUNK_SIZE)):
             chunk_size = len(mv)
             chunk = io.BytesIO(mv)
             chunk_ibs = _ideal_block_size(chunk_size, self.n, self.k)

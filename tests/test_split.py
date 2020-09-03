@@ -27,7 +27,7 @@ def mem_hx(monkeypatch):
     'in-memory, no header horcruxes for testing'
     ghx = mock.create_autospec(split.io.get_horcrux_files)
 
-    def get_mem_horcruxes(_, shares, _x, outdir=None):
+    def get_mem_horcruxes(_, shares, _x, outdir=None, encrypted_filename=None):
         return [split.io.Horcrux(io.BytesIO()) for _ in range(len(shares))]
 
     ghx.side_effect = get_mem_horcruxes

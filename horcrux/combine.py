@@ -46,6 +46,9 @@ def from_files(files: Sequence[io.FileLike], outdir: io.FileLike = '.') -> Path:
     with _mass_open(files) as streams:
         horcruxes = _prepare_streams(streams)
         crypto = _init_crypto(horcruxes)
+        if not horcruxes[0].encrypted_filename:
+            # ugly, should force filename
+            outfile = outdir/ f'combined_horcrux_stream_{horcruxes[0].share.id.hex()}'
         outfile = outdir / horcruxes[0].encrypted_filename
         with open(outfile, 'wb') as outstream:
             from_streams(horcruxes, outstream, crypto)

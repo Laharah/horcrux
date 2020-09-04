@@ -54,7 +54,7 @@ def combine_shares(shares: Sequence[Share]) -> bytes:
     pts = {s.point for s in shares}
     salt = shares[0].id
     if not all(s.id == salt for s in shares):
-        raise IdMissMatch('Shares do not share the same id.')
+        raise IdMissMatch('Shares do not have the same id. Horcruxes do not match.')
     if len(pts) < shares[0].threshold:
         raise NotEnoughShares(
             'Not enough unique Shares to reach the required threshold.')

@@ -65,6 +65,7 @@ class Stream:
         self._round_robin_cycler = None
 
     def init_horcruxes(self, streams=None):
+        "Generate and split encryption key and write required headers to horcrux files"
         key = crypto.gen_key()
         header = self.crypto.init_encrypt(key, default_tag='REKEY')
         shares = sss.generate_shares(self.n, self.k, key)

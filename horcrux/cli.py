@@ -6,6 +6,7 @@ from pathlib import Path
 
 from . import split
 from . import combine
+from .sss import NotEnoughShares, IdMissMatch
 
 
 def required_length(nmin, nmax):
@@ -148,10 +149,14 @@ def main(args=None):
         return 0
     elif args.cmd == 'combine':
         args = _resolve_files_combine(args)
-        if isinstance(args.output, Path):
-            combine.from_files(args.in_files, args.output_dir, args.output_filename)
-        else:
-            combine.from_files(args.in_files, outfile=args.output)
+        try:
+            if isinstance(args.output, Path):
+                combine.from_files(args.in_files, args.output_dir, args.output_filename)
+            else:
+                combine.from_files(args.in_files, outfile=args.output)
+        except (NotEnoughShares, IdMissMatch) as e:  # Most Likely failure Modes
+            print(e, file=sys.stderr)
+            sys.exit(2)
         return 0
 
 

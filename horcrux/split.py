@@ -53,7 +53,7 @@ class Stream:
         self.crypto = crypto.Stream()
         self.stream_name = stream_name
         if horcrux_title is None:
-            dt = datetime.date.today()
+            dt = datetime.datetime.today()
             dt = dt.strftime('%Y-%m-%d--%H-%M-%S')
             self.horcrux_title = f'Horcrux_{dt}'
         else:

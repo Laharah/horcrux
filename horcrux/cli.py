@@ -136,6 +136,11 @@ def main(args=None):
                                  args.filename, args.output_dir, args.horcrux_title)
                 s.init_horcruxes()
                 s.distribute()
+        else:
+                s = split.Stream(args.in_file, args.n, args.threshold, args.file_size,
+                                 args.filename, args.output_dir, args.horcrux_title)
+                s.init_horcruxes()
+                s.distribute()
         return 0
     elif args.cmd == 'combine':
         args = _resolve_files_combine(args)

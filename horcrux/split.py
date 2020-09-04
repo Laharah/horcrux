@@ -1,4 +1,4 @@
-'split a single file-like stream into horcruxes'
+"split a single file-like stream into horcruxes"
 import math
 import itertools
 import datetime
@@ -17,17 +17,19 @@ def _ideal_block_size(size, n, k):
 
 
 class Stream:
-    def __init__(self,
-                 in_stream,
-                 num_horcruxes,
-                 threshold,
-                 in_stream_size=None,
-                 stream_name=None,
-                 outdir='.',
-                 horcrux_title=None):
+    def __init__(
+        self,
+        in_stream,
+        num_horcruxes,
+        threshold,
+        in_stream_size=None,
+        stream_name=None,
+        outdir=".",
+        horcrux_title=None,
+    ):
         """
         Create `num_horcruxes` from in_stream and require that `threshold` are needed to
-        reassemble the original stream. 
+        reassemble the original stream.
 
         in_stream: stream to be split
 
@@ -43,7 +45,7 @@ class Stream:
         out_dir: where to place horcrux file streams
 
         horcrux_title: What to title the horcrux files. eg: my_horcrux ->
-        my_horcrux_01.hcrx """
+        my_horcrux_01.hcrx"""
 
         self.in_stream = in_stream
         self.stream_size = in_stream_size
@@ -54,8 +56,8 @@ class Stream:
         self.stream_name = stream_name
         if horcrux_title is None:
             dt = datetime.datetime.today()
-            dt = dt.strftime('%Y-%m-%d--%H-%M-%S')
-            self.horcrux_title = f'Horcrux_{dt}'
+            dt = dt.strftime("%Y-%m-%d--%H-%M-%S")
+            self.horcrux_title = f"Horcrux_{dt}"
         else:
             self.horcrux_title = horcrux_title
         self.outdir = outdir
@@ -67,25 +69,29 @@ class Stream:
     def init_horcruxes(self, streams=None):
         "Generate and split encryption key and write required headers to horcrux files"
         key = crypto.gen_key()
-        header = self.crypto.init_encrypt(key, default_tag='REKEY')
+        header = self.crypto.init_encrypt(key, default_tag="REKEY")
         shares = sss.generate_shares(self.n, self.k, key)
         if self.stream_name:
-            encrypted_filename = crypto.SecretBox(key).encrypt(self.stream_name.encode())
+            encrypted_filename = crypto.SecretBox(key).encrypt(
+                self.stream_name.encode()
+            )
         else:
             encrypted_filename = None
         del key
         if streams:
             if len(streams) != self.n:
-                raise ValueError(f'Need {self.n} streams to init.')
-            self.horcruxes = io.init_horcrux_streams(streams, shares, header,
-                                                     encrypted_filename)
+                raise ValueError(f"Need {self.n} streams to init.")
+            self.horcruxes = io.init_horcrux_streams(
+                streams, shares, header, encrypted_filename
+            )
         else:
-            self.horcruxes = io.get_horcrux_files(self.horcrux_title, shares, header,
-                                                  self.outdir, encrypted_filename)
+            self.horcruxes = io.get_horcrux_files(
+                self.horcrux_title, shares, header, self.outdir, encrypted_filename
+            )
 
     def distribute(self, istream=None, size=None):
         if not self.horcruxes:
-            raise FileNotFoundError('Horcruxes not initialized.')
+            raise FileNotFoundError("Horcruxes not initialized.")
         in_stream = self.in_stream if istream is None else istream
         size = size if size else self.stream_size
         if size is not None:
@@ -125,7 +131,7 @@ class Stream:
             raise AssertionError("DISTRIBUTION INCOMPLETE! MIGHT NOT RECONSTRUCT!")
 
     def _round_robin_distribute(self, chunk, block_size=DEFAULT_BLOCK_SIZE):
-        'distribute chunk to horcruxes in round robin fashion in blocks of block_size'
+        "distribute chunk to horcruxes in round robin fashion in blocks of block_size"
         if self._round_robin_cycler is None:
             # Cycler is re-used in case of chunk boundary issues
             def cycler():
@@ -142,7 +148,7 @@ class Stream:
                 self.horcruxes[i].write_data_block(block_id, block)
 
     def _full_distribute(self, chunk):
-        'distribute single chunk to all horcruxes'
+        "distribute single chunk to all horcruxes"
         ciphertext = self.crypto.encrypt(chunk.read())
         block_id = next(self.block_counter)
         for h in self.horcruxes:

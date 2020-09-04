@@ -1,4 +1,4 @@
-'io and stream handlers'
+"io and stream handlers"
 from collections import deque
 from typing import Union, List
 from os import PathLike
@@ -22,7 +22,7 @@ class Horcrux:
         self.encrypted_filename = None
 
     def init_read(self):
-        'read headers from horcrux stream leaving stream cursor at begining of streamblocks'
+        "read headers from horcrux stream leaving stream cursor at begining of streamblocks"
         share = ShareHeader()
         share.ParseFromString(self._read_message_bytes())
         pt = sss.Point(share.point.X, share.point.Y)
@@ -37,7 +37,7 @@ class Horcrux:
         self._read_next_block_id()
 
     def read_block(self):
-        'read the next data stream block, returning the block id and the data'
+        "read the next data stream block, returning the block id and the data"
         m = StreamBlock()
         m.ParseFromString(self._read_message_bytes())
         this_id = self.next_block_id
@@ -45,7 +45,7 @@ class Horcrux:
         return this_id, m.data
 
     def skip_block(self):
-        'efficiently skip reading the next block'
+        "efficiently skip reading the next block"
         try:
             self._read_message_bytes(skip=True)
         except IndexError:
@@ -62,13 +62,13 @@ class Horcrux:
         self.next_block_id = bid.id
 
     def init_write(self, share, crypto_header, encrypted_filename=None):
-        'write required horcrux headers and prepare stream for blockwriting'
+        "write required horcrux headers and prepare stream for blockwriting"
         self._write_share_header(share)
         self.hrcx_id = share.point.X
         self._write_stream_header(crypto_header, encrypted_filename)
 
     def _write_bytes(self, b):
-        'write delimited raw bytes to horcrux. raw=True to write raw bytes'
+        "write delimited raw bytes to horcrux. raw=True to write raw bytes"
         size = _VarintBytes(len(b))
         self.stream.write(size)
         self.stream.write(b)
@@ -89,7 +89,7 @@ class Horcrux:
         self._write_bytes(sh.SerializeToString())
 
     def write_data_block(self, _id, data):
-        'write a data block to Horcrux'
+        "write a data block to Horcrux"
         bid = BlockID()
         block = StreamBlock()
         bid.id = _id
@@ -98,7 +98,7 @@ class Horcrux:
         self._write_bytes(block.SerializeToString())
 
     def _read_message_bytes(self, skip=False):
-        'read the next delimited message as bytes from the horcrux'
+        "read the next delimited message as bytes from the horcrux"
         buff = deque(self.stream.read(10))
         read = len(buff)
         msg_len, new_pos = _DecodeVarint32(buff, 0)
@@ -119,17 +119,19 @@ class Horcrux:
         return bytes(ary)
 
 
-def get_horcrux_files(filename: FileLike,
-                      shares: List[sss.Share],
-                      crypto_header: bytes,
-                      outdir: FileLike = '.',
-                      encrypted_filename: Union[bytes, None] = None) -> List[Horcrux]:
+def get_horcrux_files(
+    filename: FileLike,
+    shares: List[sss.Share],
+    crypto_header: bytes,
+    outdir: FileLike = ".",
+    encrypted_filename: Union[bytes, None] = None,
+) -> List[Horcrux]:
     outdir = Path(outdir)
     digits = len(str(len(shares)))
     streams = []
     for i, share in enumerate(shares, start=1):
-        name = '{}_{:0{digits}}.hrcx'.format(filename, i, digits=digits)
-        f = open(outdir / name, 'wb')
+        name = "{}_{:0{digits}}.hrcx".format(filename, i, digits=digits)
+        f = open(outdir / name, "wb")
         streams.append(f)
     return init_horcrux_streams(streams, shares, crypto_header, encrypted_filename)
 

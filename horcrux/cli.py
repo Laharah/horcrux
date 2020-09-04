@@ -14,7 +14,8 @@ def required_length(nmin, nmax):
         def __call__(self, parser, args, values, option_string=None):
             if not nmin <= len(values) <= nmax:
                 msg = 'argument "{f}" requires between {nmin} and {nmax} arguments'.format(
-                    f=self.dest, nmin=nmin, nmax=nmax)
+                    f=self.dest, nmin=nmin, nmax=nmax
+                )
                 raise argparse.ArgumentTypeError(msg)
             setattr(args, self.dest, values)
 
@@ -23,47 +24,54 @@ def required_length(nmin, nmax):
 
 def _parse(args=None):
     root_parser = argparse.ArgumentParser(
-        'horcrux',
+        "horcrux",
         description=(
-            'Split a file into n encrypted horcruxes, that can only be decrypted by'
-            're-combining some number of them.'))
-    subparsers = root_parser.add_subparsers(dest='cmd')
-    split_parser = subparsers.add_parser('split')
+            "Split a file into n encrypted horcruxes, that can only be decrypted by"
+            "re-combining some number of them."
+        ),
+    )
+    subparsers = root_parser.add_subparsers(dest="cmd")
+    split_parser = subparsers.add_parser("split")
 
-    split_parser.add_argument('n',
-                              metavar='N',
-                              help='Number of horcrux files to make.',
-                              type=int)
-    split_parser.add_argument('threshold',
-                              metavar='THRESHOLD',
-                              help='Number of horcrux files needed to re-assemble input.',
-                              type=int)
     split_parser.add_argument(
-        'in_file',
-        metavar='INFILE',
-        help=
-        'File or stream to break into horcruxes. Supports reading from stdin with "-".')
-    split_parser.add_argument('output_dir',
-                              metavar='OUTPUT',
-                              nargs='?',
-                              help='Where to place created horcruxes.',
-                              type=Path,
-                              default=Path())
+        "n", metavar="N", help="Number of horcrux files to make.", type=int
+    )
     split_parser.add_argument(
-        '-f',
-        '--filename',
-        help='What to title re-assembled file. Usefull when processing streams.')
+        "threshold",
+        metavar="THRESHOLD",
+        help="Number of horcrux files needed to re-assemble input.",
+        type=int,
+    )
+    split_parser.add_argument(
+        "in_file",
+        metavar="INFILE",
+        help='File or stream to break into horcruxes. Supports reading from stdin with "-".',
+    )
+    split_parser.add_argument(
+        "output_dir",
+        metavar="OUTPUT",
+        nargs="?",
+        help="Where to place created horcruxes.",
+        type=Path,
+        default=Path(),
+    )
+    split_parser.add_argument(
+        "-f",
+        "--filename",
+        help="What to title re-assembled file. Usefull when processing streams.",
+    )
 
-    c_parser = subparsers.add_parser('combine')
-    c_parser.add_argument('in_files',
-                          nargs='+',
-                          metavar='INPUT_FILES',
-                          action=required_length(2, 254))
-    c_parser.add_argument('--output',
-                          nargs='?',
-                          metavar="OUTPUT",
-                          default='.',
-                          help='Where to place the newly reconstructed file.')
+    c_parser = subparsers.add_parser("combine")
+    c_parser.add_argument(
+        "in_files", nargs="+", metavar="INPUT_FILES", action=required_length(2, 254)
+    )
+    c_parser.add_argument(
+        "--output",
+        nargs="?",
+        metavar="OUTPUT",
+        default=".",
+        help="Where to place the newly reconstructed file.",
+    )
     if args is None:
         args = root_parser.parse_args()
     else:
@@ -73,7 +81,7 @@ def _parse(args=None):
 
 def _resolve_files_split(args):
     # file size stuff
-    if args.in_file == '-':
+    if args.in_file == "-":
         args.in_file = sys.stdin.buffer
         args.file_size = None
     else:
@@ -96,13 +104,13 @@ def _resolve_files_split(args):
             args.horcrux_title = args.output_dir.name
             args.output_dir = args.output_dir.parent
         else:
-            print(f'Could not find directory {args.output_dir.parent}', file=sys.stderr)
+            print(f"Could not find directory {args.output_dir.parent}", file=sys.stderr)
     elif args.output_dir.is_dir():
         if not args.filename:
             args.horcrux_title = None
         else:
             args.horcrux_title = Path(args.filename).stem
-    else:  #output_dir is filename
+    else:  # output_dir is filename
         args.horcrux_title = args.output_dir.name
         args.output_dir = Path()
     return args
@@ -110,7 +118,7 @@ def _resolve_files_split(args):
 
 def _resolve_files_combine(args):
     args.in_files = [Path(f) for f in args.in_files]
-    if args.output == '-':
+    if args.output == "-":
         args.output = sys.stdout.buffer
         return args
     args.output = Path(args.output)
@@ -122,7 +130,7 @@ def _resolve_files_combine(args):
             args.output_filename = args.output.name
             args.output_dir = args.output.parent
         else:
-            print(f'Could not find output direcrory {args.output}.', file=sys.stderr)
+            print(f"Could not find output direcrory {args.output}.", file=sys.stderr)
     return args
 
 
@@ -133,21 +141,35 @@ def main(args=None):
     else:
         args = _parse(args)
 
-    if args.cmd == 'split':
+    if args.cmd == "split":
         args = _resolve_files_split(args)
         if isinstance(args.in_file, Path):
-            with open(args.in_file, 'rb') as in_stream:
-                s = split.Stream(in_stream, args.n, args.threshold, args.file_size,
-                                 args.filename, args.output_dir, args.horcrux_title)
+            with open(args.in_file, "rb") as in_stream:
+                s = split.Stream(
+                    in_stream,
+                    args.n,
+                    args.threshold,
+                    args.file_size,
+                    args.filename,
+                    args.output_dir,
+                    args.horcrux_title,
+                )
                 s.init_horcruxes()
                 s.distribute()
         else:
-            s = split.Stream(args.in_file, args.n, args.threshold, args.file_size,
-                             args.filename, args.output_dir, args.horcrux_title)
+            s = split.Stream(
+                args.in_file,
+                args.n,
+                args.threshold,
+                args.file_size,
+                args.filename,
+                args.output_dir,
+                args.horcrux_title,
+            )
             s.init_horcruxes()
             s.distribute()
         return 0
-    elif args.cmd == 'combine':
+    elif args.cmd == "combine":
         args = _resolve_files_combine(args)
         try:
             if isinstance(args.output, Path):

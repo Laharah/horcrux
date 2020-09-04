@@ -19,13 +19,13 @@ curve generation:
 
 from typing import List, Tuple, Sequence
 from nacl.pwhash import argon2id
-from nacl.utils import random  #cryptographically strong random function
+from nacl.utils import random  # cryptographically strong random function
 from collections import namedtuple
 
-Point = namedtuple('Point', 'X Y')
-Share = namedtuple('Share', 'id threshold point')
+Point = namedtuple("Point", "X Y")
+Share = namedtuple("Share", "id threshold point")
 # largest 256 bit prime, this will be our finite field
-PRIME = 2**256 - 189
+PRIME = 2 ** 256 - 189
 DIGEST_INDEX = 254
 SECRET_INDEX = 255
 
@@ -43,37 +43,40 @@ class InvalidDigest(Exception):
 
 
 def generate_shares(shares: int, threshold: int, secret: bytes) -> List[Share]:
-    'split a secret into n shares where threshold shares are required to recover it.'
+    "split a secret into n shares where threshold shares are required to recover it."
     salt = random(16)
     pts = _split_secret(shares, threshold, secret, salt)
     return [Share(salt, threshold, p) for p in pts]
 
 
 def combine_shares(shares: Sequence[Share]) -> bytes:
-    'combine shares of some distributed secret to recover it.'
+    "combine shares of some distributed secret to recover it."
     pts = {s.point for s in shares}
     salt = shares[0].id
     if not all(s.id == salt for s in shares):
-        raise IdMissMatch('Shares do not have the same id. Horcruxes do not match.')
+        raise IdMissMatch("Shares do not have the same id. Horcruxes do not match.")
     if len(pts) < shares[0].threshold:
         raise NotEnoughShares(
-            'Not enough unique Shares to reach the required threshold.')
+            "Not enough unique Shares to reach the required threshold."
+        )
     return _recover_secret(pts, salt)
 
 
-def _split_secret(shares: int, threshold: int, secret: bytes, salt: bytes) -> List[Point]:
+def _split_secret(
+    shares: int, threshold: int, secret: bytes, salt: bytes
+) -> List[Point]:
     # could technically force skip digest and secret share, but I'm lazy, so hard limit of
     # 254 total shares. (Digest can't be distributed, because it would mean the
     # secret could be calculated without any other shares by reversing the digest share)
     assert shares < DIGEST_INDEX < SECRET_INDEX, "Too many shares."
     assert threshold >= 2, "Can't split secret into less than 2 parts."
     assert threshold <= shares, "Threshold can't be more than total number of shares."
-    digest = int.from_bytes(hsh(secret, salt), 'big')
-    secret = int.from_bytes(secret, 'big')
+    digest = int.from_bytes(hsh(secret, salt), "big")
+    secret = int.from_bytes(secret, "big")
     assert secret < PRIME and digest < PRIME, "bad secret"
 
     def rand_int_32():
-        return int.from_bytes(random(32), 'big')
+        return int.from_bytes(random(32), "big")
 
     # Threshold determines the order of our polynomial. Secret and Digest points means we
     # require at least a straight line (1st order poly which requires 2 points to define,
@@ -86,21 +89,23 @@ def _split_secret(shares: int, threshold: int, secret: bytes, salt: bytes) -> Li
     # points, whether they are base points or not.
 
     rand_points = [Point(i, rand_int_32() % PRIME) for i in range(threshold - 2)]
-    base_points = rand_points + [Point(DIGEST_INDEX, digest), Point(SECRET_INDEX, secret)]
+    base_points = rand_points + [
+        Point(DIGEST_INDEX, digest),
+        Point(SECRET_INDEX, secret),
+    ]
     return [
-        Point(i,
-              _larange_interpolate(i, base_points).to_bytes(32, 'big'))
+        Point(i, _larange_interpolate(i, base_points).to_bytes(32, "big"))
         for i in range(shares)
     ]
 
 
 def _recover_secret(shares: Sequence[Point], salt: bytes) -> bytes:
-    shares = [Point(p.X, int.from_bytes(p.Y, 'big')) for p in shares]
-    secret = _larange_interpolate(SECRET_INDEX, shares).to_bytes(32, 'big')
+    shares = [Point(p.X, int.from_bytes(p.Y, "big")) for p in shares]
+    secret = _larange_interpolate(SECRET_INDEX, shares).to_bytes(32, "big")
     # Check digest point to ensure secret has been correctly recovered
-    digest = _larange_interpolate(DIGEST_INDEX, shares).to_bytes(32, 'big')
+    digest = _larange_interpolate(DIGEST_INDEX, shares).to_bytes(32, "big")
     if hsh(secret, salt) != digest:
-        raise InvalidDigest('Shared secret could not be recovered.')
+        raise InvalidDigest("Shared secret could not be recovered.")
     return secret
 
 
@@ -121,7 +126,7 @@ def product(vals):
 
 def _divmod(num, den, p):
     """
-    compute num / den mod p. 
+    compute num / den mod p.
 
     Fermats little theorem: x^m-1 mod m must be 1.  Hence
     (pow(x,m-2,m) * x) % m == 1. So pow(x,m-2,m) is the inverse of x (mod m).

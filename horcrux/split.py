@@ -66,7 +66,7 @@ class Stream:
 
     def init_horcruxes(self, streams=None):
         key = crypto.gen_key()
-        header = self.crypto.init_encrypt(key)
+        header = self.crypto.init_encrypt(key, default_tag='REKEY')
         shares = sss.generate_shares(self.n, self.k, key)
         if self.stream_name:
             encrypted_filename = crypto.SecretBox(key).encrypt(self.stream_name.encode())

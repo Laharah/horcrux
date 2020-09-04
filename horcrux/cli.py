@@ -58,7 +58,11 @@ def _parse(args=None):
                           nargs='+',
                           metavar='INPUT_FILES',
                           action=required_length(2, 254))
-    c_parser.add_argument('--output', nargs='?', metavar="OUTPUT", default='.')
+    c_parser.add_argument('--output',
+                          nargs='?',
+                          metavar="OUTPUT",
+                          default='.',
+                          help='Where to place the newly reconstructed file.')
     if args is None:
         args = root_parser.parse_args()
     else:
@@ -137,10 +141,10 @@ def main(args=None):
                 s.init_horcruxes()
                 s.distribute()
         else:
-                s = split.Stream(args.in_file, args.n, args.threshold, args.file_size,
-                                 args.filename, args.output_dir, args.horcrux_title)
-                s.init_horcruxes()
-                s.distribute()
+            s = split.Stream(args.in_file, args.n, args.threshold, args.file_size,
+                             args.filename, args.output_dir, args.horcrux_title)
+            s.init_horcruxes()
+            s.distribute()
         return 0
     elif args.cmd == 'combine':
         args = _resolve_files_combine(args)

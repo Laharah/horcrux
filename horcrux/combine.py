@@ -40,16 +40,22 @@ def _mass_open(files):
             f.close()
 
 
-def from_files(files: Sequence[io.FileLike], outdir: io.FileLike = '.') -> Path:
+def from_files(files: Sequence[io.FileLike], outdir: io.FileLike = '.', outfile_name:str=None, outfile=None) -> Path:
     'combine horcruxes from filelike paths, return the new Path object'
     outdir = Path(outdir)
     with _mass_open(files) as streams:
         horcruxes = _prepare_streams(streams)
         crypto = _init_crypto(horcruxes)
-        if not horcruxes[0].encrypted_filename:
+        if outfile:
+            from_streams(horcruxes, outfile, crypto)
+            return outfile
+        if not horcruxes[0].encrypted_filename and not outfile_name:
             # ugly, should force filename
             outfile = outdir/ f'combined_horcrux_stream_{horcruxes[0].share.id.hex()}'
-        outfile = outdir / horcruxes[0].encrypted_filename
+        elif outfile_name:
+            outfile = outdir / outfile_name
+        else:
+            outfile = outdir / horcruxes[0].encrypted_filename
         with open(outfile, 'wb') as outstream:
             from_streams(horcruxes, outstream, crypto)
     return outfile

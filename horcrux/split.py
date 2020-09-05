@@ -2,6 +2,7 @@
 import math
 import itertools
 import datetime
+from rich.progress import Progress, BarColumn, FileSizeColumn
 
 from . import crypto
 from . import sss
@@ -65,6 +66,7 @@ class Stream:
 
         self.block_counter = itertools.count()
         self._round_robin_cycler = None
+        self.total_data_read = 0
 
     def init_horcruxes(self, streams=None):
         "Generate and split encryption key and write required headers to horcrux files"
@@ -89,30 +91,50 @@ class Stream:
                 self.horcrux_title, shares, header, self.outdir, encrypted_filename
             )
 
-    def distribute(self, istream=None, size=None):
+    def distribute(self, istream=None, size=None, progress=False):
         if not self.horcruxes:
             raise FileNotFoundError("Horcruxes not initialized.")
         in_stream = self.in_stream if istream is None else istream
         size = size if size else self.stream_size
-        if size is not None:
-            ibs = _ideal_block_size(size, self.n, self.k)
-            if MIN_BLOCK_SIZE <= ibs <= MAX_CHUNK_SIZE:
-                self._smart_distribute(in_stream, ibs)
-                return
-        while mv := memoryview(in_stream.read(MAX_CHUNK_SIZE)):
-            chunk_size = len(mv)
-            chunk = io.BytesIO(mv)
-            chunk_ibs = _ideal_block_size(chunk_size, self.n, self.k)
-            if MIN_BLOCK_SIZE <= chunk_ibs:
-                self._smart_distribute(chunk, chunk_ibs)
-            elif chunk_size < DEFAULT_BLOCK_SIZE:
-                self._full_distribute(chunk)
+        if size:
+            progress_settings = []
+        else:
+            progress_settings = [
+                "[progress.description]{task.description}",
+                BarColumn(),
+                FileSizeColumn(),
+            ]
+        with Progress(*progress_settings, transient=True) as pb:
+            self.pb = pb
+            if size:
+                self.task = pb.add_task("Splitting...", total=size, visible=progress)
             else:
-                self._round_robin_distribute(chunk)
+                self.task = pb.add_task(
+                    "Splitting...", start=False, total=0, visible=progress
+                )
+            if size is not None:
+                ibs = _ideal_block_size(size, self.n, self.k)
+                if MIN_BLOCK_SIZE <= ibs <= MAX_CHUNK_SIZE:
+                    self._smart_distribute(in_stream, ibs)
+                    return
+            while mv := memoryview(in_stream.read(MAX_CHUNK_SIZE)):
+                chunk_size = len(mv)
+                chunk = io.BytesIO(mv)
+                chunk_ibs = _ideal_block_size(chunk_size, self.n, self.k)
+                if MIN_BLOCK_SIZE <= chunk_ibs:
+                    self._smart_distribute(chunk, chunk_ibs)
+                elif chunk_size < DEFAULT_BLOCK_SIZE:
+                    self._full_distribute(chunk)
+                else:
+                    self._round_robin_distribute(chunk)
 
     def _block_producer(self, chunk, block_size):
         "produce id'd, encrypted blocks of block_size from chunk"
         while block := chunk.read(block_size):
+            try:
+                self.pb.update(self.task, advance=len(block))
+            except AttributeError:
+                pass
             yield next(self.block_counter), self.crypto.encrypt(block)
 
     def _smart_distribute(self, chunk, block_size):

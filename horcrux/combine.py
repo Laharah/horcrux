@@ -1,6 +1,7 @@
 from typing import Sequence, List, Union
 from pathlib import Path
 import contextlib
+from rich.progress import Progress, BarColumn, TimeRemainingColumn, FileSizeColumn
 
 from . import io
 from . import sss
@@ -49,14 +50,16 @@ def from_files(
     outdir: io.FileLike = ".",
     outfile_name: str = None,
     outfile=None,
+    progress=False,
 ) -> Path:
     "combine horcruxes from filelike paths, return the new Path object"
     outdir = Path(outdir)
+
     with _mass_open(files) as streams:
         horcruxes = _prepare_streams(streams)
         crypto = _init_crypto(horcruxes)
         if outfile:
-            from_streams(horcruxes, outfile, crypto)
+            from_streams(horcruxes, outfile, crypto, progress=progress)
             return outfile
         if not horcruxes[0].encrypted_filename and not outfile_name:
             # ugly, should force filename
@@ -66,12 +69,15 @@ def from_files(
         else:
             outfile = outdir / horcruxes[0].encrypted_filename
         with open(outfile, "wb") as outstream:
-            from_streams(horcruxes, outstream, crypto)
+            from_streams(horcruxes, outstream, crypto, progress=progress)
     return outfile
 
 
 def from_streams(
-    streams: Sequence[io.Horcrux], out_stream=None, crypto: crypto.Stream = None
+    streams: Sequence[io.Horcrux],
+    out_stream=None,
+    crypto: crypto.Stream = None,
+    progress=False,
 ) -> Union[io.IOBase, bytes]:
     "Combine horcruxes from given streams. Return the out_stream or bytes if not assigned."
     if not out_stream:
@@ -86,17 +92,26 @@ def from_streams(
     current_id = 0
     live = set(hxs)
     dead = set()
-    while live:
-        for h in live:
-            if h.next_block_id == current_id:
-                output.write(crypto.decrypt(h.read_block()[1]))
-                current_id += 1
-                break
-            elif h.next_block_id is None:
-                dead.add(h)
-                continue
-            elif h.next_block_id < current_id:
-                h.skip_block()
-        live -= dead
+    with Progress(
+        "[progress.description]{task.description}",
+        BarColumn(),
+        FileSizeColumn(),
+        transient=True,
+    ) as pb:
+        task = pb.add_task("Combining...", start=False, visible=progress)
+
+        while live:
+            pb.update(task, completed=output.tell())
+            for h in live:
+                if h.next_block_id == current_id:
+                    output.write(crypto.decrypt(h.read_block()[1]))
+                    current_id += 1
+                    break
+                elif h.next_block_id is None:
+                    dead.add(h)
+                    continue
+                elif h.next_block_id < current_id:
+                    h.skip_block()
+            live -= dead
     if not out_stream:
         return output.getvalue()

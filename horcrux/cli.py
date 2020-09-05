@@ -155,7 +155,7 @@ def main(args=None):
                     args.horcrux_title,
                 )
                 s.init_horcruxes()
-                s.distribute()
+                s.distribute(progress=True)
         else:
             s = split.Stream(
                 args.in_file,
@@ -167,13 +167,15 @@ def main(args=None):
                 args.horcrux_title,
             )
             s.init_horcruxes()
-            s.distribute()
+            s.distribute(progress=True)
         return 0
     elif args.cmd == "combine":
         args = _resolve_files_combine(args)
         try:
             if isinstance(args.output, Path):
-                combine.from_files(args.in_files, args.output_dir, args.output_filename)
+                combine.from_files(
+                    args.in_files, args.output_dir, args.output_filename, progress=True
+                )
             else:
                 combine.from_files(args.in_files, outfile=args.output)
         except (NotEnoughShares, IdMissMatch) as e:  # Most Likely failure Modes

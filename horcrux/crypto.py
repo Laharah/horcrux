@@ -2,6 +2,10 @@ from nacl.bindings import crypto_secretstream as lib
 from nacl.secret import SecretBox
 
 
+class DecryptionError(Exception):
+    pass
+
+
 def gen_key():
     return lib.crypto_secretstream_xchacha20poly1305_keygen()
 
@@ -46,6 +50,12 @@ class Stream:
 
     def decrypt(self, ciphertext):
         "decrypt cipertext and return the plaintext"
-        pt, lt = lib.crypto_secretstream_xchacha20poly1305_pull(self._state, ciphertext)
+        try:
+            pt, lt = lib.crypto_secretstream_xchacha20poly1305_pull(
+                self._state,
+                ciphertext,
+            )
+        except lib.exc.RuntimeError as e:
+            raise DecryptionError("Error while decrypting ciphertext.") from e
         self.last_tag = self.TAGS[lt]
         return pt

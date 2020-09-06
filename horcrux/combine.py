@@ -6,6 +6,7 @@ from rich.progress import Progress, BarColumn, TimeRemainingColumn, FileSizeColu
 from . import io
 from . import sss
 from . import crypto
+from .crypto import DecryptionError
 
 
 def _prepare_streams(streams):
@@ -99,11 +100,15 @@ def from_streams(
         transient=True,
     ) as pb:
         task = pb.add_task("Combining...", start=False, visible=progress)
-        
+
         while live:
             for h in live:
                 if h.next_block_id == current_id:
-                    pt = crypto.decrypt(h.read_block()[1])
+                    try:
+                        pt = crypto.decrypt(h.read_block()[1])
+                    except DecryptionError as e:
+                        e.horcrux_id = h.hrcx_id  # add some helpful info
+                        raise
                     pb.update(task, advance=len(pt))
                     output.write(pt)
                     current_id += 1

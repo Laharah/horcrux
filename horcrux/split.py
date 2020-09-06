@@ -2,11 +2,13 @@
 import math
 import itertools
 import datetime
+
 from rich.progress import Progress, BarColumn, FileSizeColumn
 
 from . import crypto
 from . import sss
 from . import io
+
 
 MIN_BLOCK_SIZE = 20
 DEFAULT_BLOCK_SIZE = 4096

@@ -178,8 +178,12 @@ def main(args=None):
                 )
             else:
                 combine.from_files(args.in_files, outfile=args.output)
-        except (NotEnoughShares, IdMissMatch) as e:  # Most Likely failure Modes
-            print(e, file=sys.stderr)
+        # Catch most likely failure modes
+        except (NotEnoughShares, IdMissMatch, combine.crypto.DecryptionError) as e:
+            if isinstance(e, combine.DecryptionError):
+                print(f'{e} Horcrux {e.horcrux_id+1} is likely corrupted.')
+            else:
+                print(e, file=sys.stderr)
             sys.exit(2)
         return 0
 

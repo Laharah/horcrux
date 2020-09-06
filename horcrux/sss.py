@@ -152,7 +152,7 @@ def _larange_interpolate(x, points):
         ys.append(pt.Y)
     assert k == len(set(xs)), "Points must be destinct."
     nums = []  # numerators
-    dens = []  # denominators
+    dens = []  # denominators calculated individually to prevent float div errors
     for i in range(k):
         others = list(xs)
         cur = others.pop(i)  # current x value
@@ -160,4 +160,4 @@ def _larange_interpolate(x, points):
         dens.append(product(cur - o for o in others))
     den = product(dens)  # common denominator
     num = sum([_divmod(nums[i] * den * ys[i] % p, dens[i], p) for i in range(k)])
-    return (_divmod(num, den, p) + p) % p
+    return _divmod(num, den, p) % p

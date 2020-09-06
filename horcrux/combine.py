@@ -99,12 +99,13 @@ def from_streams(
         transient=True,
     ) as pb:
         task = pb.add_task("Combining...", start=False, visible=progress)
-
+        
         while live:
-            pb.update(task, completed=output.tell())
             for h in live:
                 if h.next_block_id == current_id:
-                    output.write(crypto.decrypt(h.read_block()[1]))
+                    pt = crypto.decrypt(h.read_block()[1])
+                    pb.update(task, advance=len(pt))
+                    output.write(pt)
                     current_id += 1
                     break
                 elif h.next_block_id is None:

@@ -20,6 +20,7 @@ class Horcrux:
         self.share = None
         self.crypto_header = None
         self.encrypted_filename = None
+        self._in_buff = deque(maxlen=10)
 
     def init_read(self):
         "read headers from horcrux stream leaving stream cursor at begining of streamblocks"
@@ -99,23 +100,25 @@ class Horcrux:
 
     def _read_message_bytes(self, skip=False):
         "read the next delimited message as bytes from the horcrux"
-        buff = deque(self.stream.read(10))
-        read = len(buff)
+        buff = self._in_buff
+        if len(buff) < 10:
+            buff.extend(self.stream.read(10 - len(buff)))
         msg_len, new_pos = _DecodeVarint32(buff, 0)
         for _ in range(new_pos):
             buff.popleft()
         if msg_len <= len(buff):
-            m = bytes(list(buff)[:msg_len])
-            self.stream.seek((new_pos + msg_len) - read, 1)
+            m = bytes(buff.popleft() for _ in range(msg_len))
             return m if not skip else None
         if skip:
             try:
                 self.stream.seek(msg_len - len(buff), 1)
             except OSError:
                 self.stream.read(msg_len - len(buff))
+            buff.clear()
             return
         ary = bytearray(buff)
         ary.extend(self.stream.read(msg_len - len(buff)))
+        buff.clear()
         return bytes(ary)
 
 

@@ -66,7 +66,6 @@ class Stream:
 
         self.block_counter = itertools.count()
         self._round_robin_cycler = None
-        self.total_data_read = 0
 
     def init_horcruxes(self, streams=None):
         "Generate and split encryption key and write required headers to horcrux files"

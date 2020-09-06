@@ -48,7 +48,7 @@ def test_horcurx__read_message_bytes_small(hx):
 
 
 def test_horcrux__read_message_bytes_large(hx):
-    m1 = bytes(random.getrandbits(8) for _ in range(500))
+    m1 = bytes(255 for _ in range(500))
     m2 = bytes(random.getrandbits(8) for _ in range(4))
     m3 = bytes(random.getrandbits(8) for _ in range(4096))
     for m in (m1, m2, m3):
@@ -140,8 +140,8 @@ def test_horcrux_read_block(hx):
 
 
 def test_horcrux_skip_block(hx):
-    data1 = bytes(random.getrandbits(8) for _ in range(30))
-    data2 = bytes(random.getrandbits(8) for _ in range(30))
+    data1 = bytes(255 for _ in range(30))
+    data2 = bytes(255 for _ in range(30))
     hx.write_data_block(33, data1)
     hx.write_data_block(45, data2)
     stream = hx.stream

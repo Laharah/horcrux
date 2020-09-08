@@ -39,6 +39,11 @@ optional arguments:
   -f FILENAME, --filename FILENAME
                         What to title re-assembled file. Usefull when
                         processing streams.
+
+examples:
+    horcrux split passwords.txt ~/horcruxes 2 5
+    horcrux split myfile.txt ~/horcruxes/my_hx 4 5
+    tar c "Documents" | horcrux split - doc_horcrux --filename Documents.tar 2 2
 ```
 
 ### Combining
@@ -51,4 +56,9 @@ positional arguments:
 optional arguments:
   -h, --help         show this help message and exit
   --output [OUTPUT]  Where to place the newly reconstructed file.
+
+examples:
+    horcrux combine ~/horcruxes/passwords_1.hrcx ~/horcruxes/passwords_4.hrcx
+    horcrux combine my_hx_* --output=reconstructed_file.txt
+    horcrux combine doc_horcrux_1.hrcx doc_horcrux_2.hrcx --output - | tar x
 ```

@@ -34,15 +34,6 @@ def _parse(args=None):
     split_parser = subparsers.add_parser("split")
 
     split_parser.add_argument(
-        "n", metavar="N", help="Number of horcrux files to make.", type=int
-    )
-    split_parser.add_argument(
-        "threshold",
-        metavar="THRESHOLD",
-        help="Number of horcrux files needed to re-assemble input.",
-        type=int,
-    )
-    split_parser.add_argument(
         "in_file",
         metavar="INFILE",
         help='File or stream to break into horcruxes. Supports reading from stdin with "-".',
@@ -54,6 +45,15 @@ def _parse(args=None):
         help="Where to place created horcruxes.",
         type=Path,
         default=Path(),
+    )
+    split_parser.add_argument(
+        "threshold",
+        metavar="THRESHOLD",
+        help="Number of horcrux files needed to re-assemble input.",
+        type=int,
+    )
+    split_parser.add_argument(
+        "n", metavar="N", help="Number of horcrux files to make.", type=int
     )
     split_parser.add_argument(
         "-f",
@@ -87,11 +87,9 @@ def _resolve_files_split(args):
     else:
         args.in_file = Path(args.in_file)
         if not args.in_file.exists():
-            print(f"Could not find file {args.in_file}.", file=sys.stderr)
-            sys.exit(2)
+            raise FileNotFoundError(f"Could not find file {args.in_file}.")
         if not args.in_file.is_file() and not args.in_file.is_fifo():
-            print("INFILE argument must be a file or pipe", file=sys.stderr)
-            sys.exit(2)
+            raise TypeError("INFILE argument must be a file or pipe")
         if args.in_file.is_file():
             args.file_size = os.stat(args.in_file).st_size
             args.filename = args.in_file.name if not args.filename else args.filename
@@ -136,10 +134,14 @@ def _resolve_files_combine(args):
 
 def main(args=None):
     """Console script for horcrux."""
-    if args is None:
-        args = _parse()
-    else:
-        args = _parse(args)
+    try:
+        if args is None:
+            args = _parse()
+        else:
+            args = _parse(args)
+    except (FileNotFoundError, TypeError) as e:
+        print(e, file=sys.stderr)
+        return 2
 
     if args.cmd == "split":
         args = _resolve_files_split(args)
@@ -181,10 +183,10 @@ def main(args=None):
         # Catch most likely failure modes
         except (NotEnoughShares, IdMissMatch, combine.crypto.DecryptionError) as e:
             if isinstance(e, combine.DecryptionError):
-                print(f'{e} Horcrux {e.horcrux_id+1} is likely corrupted.')
+                print(f"{e} Horcrux {e.horcrux_id+1} is likely corrupted.")
             else:
                 print(e, file=sys.stderr)
-            sys.exit(2)
+            return 2
         return 0
 
 

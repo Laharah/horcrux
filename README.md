@@ -82,10 +82,35 @@ be reassembled into the original input.
 
 The random encryption key is split using Shamir Secret Sharing. This ensures that no part
 of the key can be recovered without at least the required number of shares. That is, there
-is zero information until some threshold of shared pieces are re-combined. 
+is zero information until some threshold of shared pieces are re-combined. The file is
+then broken up and encrypted using libsodium.
 
-### SSS
+#### SSS
 
-Shamie Secret Sharing works by exploiting the fact that 2 points are required to describe
+Shamir Secret Sharing works by exploiting the fact that 2 points are required to describe
 a line, 3 points are required to describe a parabola, and so on and so forth. By choosing
-a polynomile equation  
+a random polynomial where order=threshold we can set our secret to be some point along
+that curve (usually the y-intercept). We can then distribute other points along that curve
+to our horcurxes, as many as we want, and be assured that the correct curve can only be
+assembled with the threshold number of points. 
+
+As an example, lets say we want 5 horcruxes and that at least 3 are required to recover
+the encryption key. We would generate a random key, the hash of that key, and one more
+completely random point. We would then construct the parabola that goes through these
+three points. Then we would choose 5 new points along that curve, and place them in our
+horcruxes. If any 3 horcruxes are combined, the original parabola can be reconstructed
+using the x and y values they contain.
+Then we use that reconstructed curve to calculate the value at the x-positions of our random key, and the
+key's hash. We use the hash to check that we have recovered the key correctly and then use
+the key to start decrypting blocks from the horcruxes.
+
+#### Encryption
+
+The input file is broken into blocks and fed though libsodium's xChaCha20-poly1305 stream
+encryption. Copies of each block are then distributed to the horcrux files in such a way
+that no combination of horcruxes that is less than the required number has all the blocks
+from the input file (this is not always possible when there are a large number of
+horcruxes, so it does its best). The encryption cipher is re-keyed after each block, so
+that even if the original encryption key is brute forced on a single horcrux, only the
+first few blocks would be readable; the first missing block would cause a re-key that the
+attacker couldn't replicate, meaning they'd have to brute force all over again.

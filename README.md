@@ -4,6 +4,8 @@
 
 Split a file into n encrypted horcruxes, that can only be decrypted by re-combining k of them.
 
+Inspired by https://github.com/kndyry/horcrux
+
 
 * Free software: MIT license
 
@@ -62,3 +64,28 @@ examples:
     horcrux combine my_hx_* --output=reconstructed_file.txt
     horcrux combine doc_horcrux_1.hrcx doc_horcrux_2.hrcx --output - | tar x
 ```
+
+### How it works
+
+When splitting, a random 256 bit encryption key is generated and then split into n pieces.
+That key is then used to encrypt the input data into blocks which are then distributed to
+the horcrux files. Horcrux attempts to allocate the blocks in such a way no combination of
+less than the given threshold of files has all the blocks of the original file. 
+
+When combining, Horcrux reads the headers of the given horcruxes and ensures they have
+matching ids. It then attempts to recombine the key shares into the original encryption
+key. If there are enough shares, the key will be recovered correctly and the blocks will
+be reassembled into the original input.
+
+
+### Security
+
+The random encryption key is split using Shamir Secret Sharing. This ensures that no part
+of the key can be recovered without at least the required number of shares. That is, there
+is zero information until some threshold of shared pieces are re-combined. 
+
+### SSS
+
+Shamie Secret Sharing works by exploiting the fact that 2 points are required to describe
+a line, 3 points are required to describe a parabola, and so on and so forth. By choosing
+a polynomile equation  

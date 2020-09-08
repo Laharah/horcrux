@@ -18,29 +18,27 @@ Split a file into n encrypted horcruxes, that can only be decrypted by re-combin
 * python 3.8+
 * libsodium (pynacl)
 * protobuf
+* rich
 
 ## Use
 ### Splitting
 
 
 ```
-
-usage: horcrux split [-h] [-f FILENAME] N THRESHOLD INFILE [OUTPUT]
+usage: horcrux split [-h] [-f FILENAME] INFILE [OUTPUT] THRESHOLD N
 
 positional arguments:
-  N                     Number of horcrux files to make.
-  THRESHOLD             Number of horcrux files needed to re-assemble input.
   INFILE                File or stream to break into horcruxes. Supports
                         reading from stdin with "-".
   OUTPUT                Where to place created horcruxes.
+  THRESHOLD             Number of horcrux files needed to re-assemble input.
+  N                     Number of horcrux files to make.
 
 optional arguments:
   -h, --help            show this help message and exit
   -f FILENAME, --filename FILENAME
                         What to title re-assembled file. Usefull when
                         processing streams.
-
-
 ```
 
 ### Combining

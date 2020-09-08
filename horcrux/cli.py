@@ -23,15 +23,36 @@ def required_length(nmin, nmax):
 
 
 def _parse(args=None):
+    examples = """example:
+    horcrux split passwords.txt ~/horcruxes 2 5
+    horcrux combine ~/horcruxes/passwords_1.hrcx ~/horcruxes/passwords_4.hrcx --output -"""
+
     root_parser = argparse.ArgumentParser(
         "horcrux",
         description=(
-            "Split a file into n encrypted horcruxes, that can only be decrypted by"
+            "Split a file into n encrypted horcruxes, that can only be decrypted by "
             "re-combining some number of them."
         ),
+        epilog=examples,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    subparsers = root_parser.add_subparsers(dest="cmd")
-    split_parser = subparsers.add_parser("split")
+    subparsers = root_parser.add_subparsers(
+        dest="cmd",
+        title="Commands",
+        description="Valid commands",
+        help="Use `horcrux split --help` or `horcrux combine --help` for command specific arguments",
+        required=True,
+    )
+    split_example = """examples:
+    horcrux split passwords.txt ~/horcruxes 2 5
+    horcrux split myfile.txt ~/horcruxes/my_hx 4 5
+    tar c "Documents" | horcrux split - doc_horcrux --filename Documents.tar 2 2"""
+    split_parser = subparsers.add_parser(
+        "split",
+        aliases=["sp", "s"],
+        epilog=split_example,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
     split_parser.add_argument(
         "in_file",
@@ -61,7 +82,16 @@ def _parse(args=None):
         help="What to title re-assembled file. Usefull when processing streams.",
     )
 
-    c_parser = subparsers.add_parser("combine")
+    combine_example = """examples:
+    horcrux combine ~/horcruxes/passwords_1.hrcx ~/horcruxes/passwords_4.hrcx
+    horcrux combine my_hx_* --output=reconstructed_file.txt
+    horcrux combine doc_horcrux_1.hrcx doc_horcrux_2.hrcx --output - | tar x"""
+    c_parser = subparsers.add_parser(
+        "combine",
+        aliases=["comb", "c"],
+        epilog=combine_example,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     c_parser.add_argument(
         "in_files", nargs="+", metavar="INPUT_FILES", action=required_length(2, 254)
     )

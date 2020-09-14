@@ -43,7 +43,7 @@ def test_resolve_files_split(tmp_path, capfd):
         args = cli._resolve_files_split(cli._parse(["split", "my_file.txt", "2", "6"]))
     _, err = capfd.readouterr()
     with pytest.raises(TypeError) as e:
-        args = cli._resolve_files_split(cli._parse(["split", str(tmp_path), '2', '6']))
+        args = cli._resolve_files_split(cli._parse(["split", str(tmp_path), "2", "6"]))
     _, err = capfd.readouterr()
     assert "must be a file" in str(e)
     md = tmp_path / "my_data.txt"
@@ -60,18 +60,18 @@ def test_resolve_output(tmp_path):
     )
     assert args.horcrux_title == "newhx"
     assert args.output_dir == tmp_path
-    args = cli._resolve_files_split(cli._parse(["split", "-", str(tmp_path), '2', '5']))
+    args = cli._resolve_files_split(cli._parse(["split", "-", str(tmp_path), "2", "5"]))
     assert args.horcrux_title == None
     assert args.output_dir == tmp_path
     my_file = tmp_path / "my_file.txt"
     my_file.touch()
     args = cli._resolve_files_split(
-        cli._parse(["split",  str(my_file), str(tmp_path), '2', '5'])
+        cli._parse(["split", str(my_file), str(tmp_path), "2", "5"])
     )
     assert args.horcrux_title == "my_file"
     assert args.output_dir == tmp_path
     args = cli._resolve_files_split(
-        cli._parse(["split", str(my_file), str(tmp_path / "test"),'2', '5'])
+        cli._parse(["split", str(my_file), str(tmp_path / "test"), "2", "5"])
     )
     assert args.horcrux_title == "test"
     assert args.output_dir == tmp_path
@@ -83,7 +83,7 @@ def test_round_trip(tmp_path, capfdbinary):
     original_data = bytearray(i % 256 for i in range(10000))
     my_file.write_bytes(original_data)
 
-    args = ["split", str(my_file), str(tmp_path / "horcrux"), '2', '4']
+    args = ["split", str(my_file), str(tmp_path / "horcrux"), "2", "4"]
     cli.main(args)
     my_file.unlink()
     for i in range(1, 4):

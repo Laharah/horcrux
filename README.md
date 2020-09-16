@@ -101,10 +101,10 @@ the encryption key. We would generate a random key, the hash of that key, and on
 completely random point. We would then construct the parabola that goes through these
 three points. Then we would choose 5 new points along that curve, and place them in our
 horcruxes. If any 3 horcruxes are combined, the original parabola can be reconstructed
-using the x and y values they contain.
-Then we use that reconstructed curve to calculate the value at the x-positions of our random key, and the
-key's hash. We use the hash to check that we have recovered the key correctly and then use
-the key to start decrypting blocks from the horcruxes.
+using the x and y values they contain.  Then we use that reconstructed curve to calculate
+the value at the x-positions of our random key, and the key's hash. We use the hash to
+check that we have recovered the key correctly and then use the key to start decrypting
+blocks from the horcruxes.
 
 #### Encryption
 

@@ -1,9 +1,19 @@
 import pytest
 import random
 import sys
+import rich
 from pathlib import Path
 
 from horcrux import cli
+
+
+@pytest.fixture(autouse=True)
+def rich_reset():
+    "reset the rich console after each test"
+    try:
+        yield
+    finally:
+        rich._console = None
 
 
 def test_parse():
@@ -102,3 +112,30 @@ def test_round_trip(tmp_path, capfdbinary):
     args += ["--output", str(tmp_path / "newfile.txt")]
     cli.main(args)
     assert (tmp_path / "newfile.txt").read_bytes() == original_data
+
+
+def test_no_overwrite(tmp_path, capfd, monkeypatch):
+    prev_file = tmp_path / "prev_file.txt"
+    prev_file.write_bytes(b"\xff" * 10000)
+    args = ["split", str(prev_file), str(tmp_path / "hx"), "2", "2"]
+    cli.main(args)
+    prev_file.write_bytes(b"\x00" * 10)
+    args = [
+        "combine",
+        str(tmp_path / "hx_1.hrcx"),
+        str(tmp_path / "hx_2.hrcx"),
+        "--output",
+        str(tmp_path),
+    ]
+    monkeypatch.setattr("builtins.input", lambda: "n")
+    cli.main(args)
+    assert prev_file.read_bytes() == b"\x00" * 10
+    assert "overwrite" in capfd.readouterr()[1].lower()
+    monkeypatch.setattr("builtins.input", lambda: "y")
+    cli.main(args)
+    assert prev_file.read_bytes() == b"\xff" * 10000
+    assert "overwrite" in capfd.readouterr()[1].lower()
+    prev_file.unlink()
+    cli.main(args)
+    assert prev_file.read_bytes() == b"\xff" * 10000
+    assert "overwrite" not in capfd.readouterr()[1].lower()

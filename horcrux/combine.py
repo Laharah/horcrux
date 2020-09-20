@@ -1,6 +1,7 @@
 from typing import Sequence, List, Union
 from pathlib import Path
 import contextlib
+import sys
 from rich.progress import Progress, BarColumn, TimeRemainingColumn, FileSizeColumn
 
 from . import io
@@ -69,6 +70,13 @@ def from_files(
             outfile = outdir / outfile_name
         else:
             outfile = outdir / horcruxes[0].encrypted_filename
+        if outfile.exists():
+            resp = "x"
+            while resp.lower()[0] not in "yn":
+                print(f"{outfile} already exists, overwrite? (Y/n): ", file=sys.stderr)
+                resp = input()
+            if resp.lower()[0] == "n":
+                return
         with open(outfile, "wb") as outstream:
             from_streams(horcruxes, outstream, crypto, progress=progress)
     return outfile

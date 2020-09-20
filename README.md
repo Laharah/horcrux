@@ -52,7 +52,8 @@ examples:
 
 ### Combining
 ```
-usage: horcrux combine [-h] [--output [OUTPUT]] INPUT_FILES [INPUT_FILES ...]
+usage: horcrux combine [-h] [--output [OUTPUT]] [--overwrite]
+                       INPUT_FILES [INPUT_FILES ...]
 
 positional arguments:
   INPUT_FILES
@@ -60,6 +61,7 @@ positional arguments:
 optional arguments:
   -h, --help         show this help message and exit
   --output [OUTPUT]  Where to place the newly reconstructed file.
+  --overwrite, -f    Overwrite files without prompting
 
 examples:
     horcrux combine ~/horcruxes/passwords_1.hrcx ~/horcruxes/passwords_4.hrcx

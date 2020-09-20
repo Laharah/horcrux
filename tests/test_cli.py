@@ -139,3 +139,7 @@ def test_no_overwrite(tmp_path, capfd, monkeypatch):
     cli.main(args)
     assert prev_file.read_bytes() == b"\xff" * 10000
     assert "overwrite" not in capfd.readouterr()[1].lower()
+    args.extend(["--overwrite"])
+    cli.main(args)
+    assert prev_file.read_bytes() == b"\xff" * 10000
+    assert "overwrite" not in capfd.readouterr()[1].lower()

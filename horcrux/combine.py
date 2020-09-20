@@ -52,6 +52,7 @@ def from_files(
     outdir: io.FileLike = ".",
     outfile_name: str = None,
     outfile=None,
+    overwrite=False,
     progress=False,
 ) -> Path:
     "combine horcruxes from filelike paths, return the new Path object"
@@ -70,7 +71,7 @@ def from_files(
             outfile = outdir / outfile_name
         else:
             outfile = outdir / horcruxes[0].encrypted_filename
-        if outfile.exists():
+        if outfile.exists() and not overwrite:
             resp = "x"
             while resp.lower()[0] not in "yn":
                 print(f"{outfile} already exists, overwrite? (Y/n): ", file=sys.stderr)

@@ -102,6 +102,12 @@ def _parse(args=None):
         default=".",
         help="Where to place the newly reconstructed file.",
     )
+    c_parser.add_argument(
+        "--overwrite",
+        "-f",
+        action="store_true",
+        help="Overwrite files without prompting",
+    )
     if args is None:
         args = root_parser.parse_args()
     else:
@@ -206,7 +212,11 @@ def main(args=None):
         try:
             if isinstance(args.output, Path):
                 combine.from_files(
-                    args.in_files, args.output_dir, args.output_filename, progress=True
+                    args.in_files,
+                    args.output_dir,
+                    args.output_filename,
+                    overwrite=args.overwrite,
+                    progress=True,
                 )
             else:
                 combine.from_files(args.in_files, outfile=args.output)

@@ -140,7 +140,16 @@ class Stream:
 
     def _smart_distribute(self, chunk, block_size):
         "The prefered distribution method. Chunk must be math.comb(n, n-k+1) blocks long."
-        distribution = itertools.combinations(self.horcruxes, self.n - self.k + 1)
+        if math.comb(len(self.horcruxes), self.n - self.k + 1) > 3000:
+            distribution = itertools.combinations(self.horcruxes, self.n - self.k + 1)
+        else:
+
+            def rand_distribute():
+                combs = set(itertools.combinations(self.horcruxes, self.n - self.k + 1))
+                while combs: 
+                    yield combs.pop()
+
+            distribution = rand_distribute()
         for block_id, block in self._block_producer(chunk, block_size):
             for h in next(distribution):
                 h.write_data_block(block_id, block)

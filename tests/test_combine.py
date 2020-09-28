@@ -53,7 +53,8 @@ def test_init_crypto(hx_streams):
     streams, original = hx_streams
     hxs = combine._prepare_streams(streams)
     crypto_stream = combine._init_crypto(hxs)
-    assert crypto_stream.decrypt(hxs[0].read_block()[1]).startswith(original[:10])
+    hx = [h for h in hxs if h.next_block_id == 0][0]
+    assert crypto_stream.decrypt(hx.read_block()[1]).startswith(original[:10])
 
 
 def test_fail_init_crypto(hx_streams, alt_streams):

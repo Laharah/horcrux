@@ -179,7 +179,7 @@ def main(args=None):
         print(e, file=sys.stderr)
         return 2
 
-    if args.cmd == "split":
+    if args.cmd.startswith("s"):
         args = _resolve_files_split(args)
         if isinstance(args.in_file, Path):
             with open(args.in_file, "rb") as in_stream:
@@ -207,7 +207,7 @@ def main(args=None):
             s.init_horcruxes()
             s.distribute(progress=True)
         return 0
-    elif args.cmd == "combine":
+    elif args.cmd.startswith("c"):
         args = _resolve_files_combine(args)
         try:
             if isinstance(args.output, Path):

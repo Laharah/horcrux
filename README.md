@@ -26,7 +26,7 @@ Inspired by https://github.com/kndyry/horcrux
 
 ## Compiling
 
-If you want to have a stand-alone exe of horcurx you can use pyinstaller compile one.
+If you want to have a stand-alone exe of horcrux you can use pyinstaller compile one.
 
 It's recommended that you make a virtualenv and use pip to install both horcrux and pyinstaller:
 
@@ -43,7 +43,7 @@ Once you can confirm that running `horcrux --help` works on your system run the 
 ```
 
 This will package and compile all the required files and imports into a single exe at
-`dist/horcurx`. Consult the [pyinstaller docs](https://pyinstaller.readthedocs.io/en/stable/) 
+`dist/horcrux`. Consult the [pyinstaller docs](https://pyinstaller.readthedocs.io/en/stable/) 
 to adapt the pyinstaller call for windows or other environment configurations.
 
 ## Use
